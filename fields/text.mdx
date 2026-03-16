@@ -1,0 +1,93 @@
+---
+title: "Text field"
+description: "Store a text string with optional multiline, length, pattern, and required validation."
+---
+
+The `text` field stores a string value. It renders a single-line `<input type="text">` in the Admin UI by default. Set `multiline: true` to render a `<textarea>` instead.
+
+## Usage
+
+```typescript
+import { fields } from '@keystatic/core'
+
+// Single-line
+title: fields.text({ label: 'Title' })
+
+// Multiline
+bio: fields.text({
+  label: 'Bio',
+  multiline: true,
+})
+```
+
+## Options
+
+<ParamField path="label" type="string" required>
+  The label displayed in the Admin UI for this field.
+</ParamField>
+
+<ParamField path="description" type="string">
+  Descriptive text shown below the label in the Admin UI.
+</ParamField>
+
+<ParamField path="defaultValue" type="string | (() => string)">
+  The default value for the field. Can be a static string or a function that returns a string. Defaults to an empty string.
+</ParamField>
+
+<ParamField path="multiline" type="boolean">
+  When `true`, renders a `<textarea>` instead of `<input type="text">`. Defaults to `false`.
+</ParamField>
+
+<ParamField path="validation" type="object">
+  Validation options for the field.
+
+  <Expandable title="validation properties">
+    <ParamField path="validation.isRequired" type="boolean">
+      When `true`, the field must have a non-empty value.
+    </ParamField>
+    <ParamField path="validation.length.min" type="number">
+      Minimum number of characters required.
+    </ParamField>
+    <ParamField path="validation.length.max" type="number">
+      Maximum number of characters allowed.
+    </ParamField>
+    <ParamField path="validation.pattern.regex" type="RegExp">
+      A regular expression the value must match.
+    </ParamField>
+    <ParamField path="validation.pattern.message" type="string">
+      Custom error message shown when the pattern does not match.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Return type
+
+Returns `string`. An empty field returns an empty string `""`.
+
+## Example
+
+```typescript
+import { collection, fields } from '@keystatic/core'
+
+posts: collection({
+  label: 'Posts',
+  slugField: 'title',
+  schema: {
+    title: fields.slug({
+      name: { label: 'Title' },
+    }),
+    excerpt: fields.text({
+      label: 'Excerpt',
+      description: 'A short summary shown in listing pages.',
+      multiline: true,
+      validation: {
+        length: { min: 10, max: 300 },
+      },
+    }),
+  },
+})
+```
+
+<Note>
+  The `text` field also powers the `slug` field. When you use `fields.slug()`, it uses a text field internally to capture the display name alongside the generated slug.
+</Note>

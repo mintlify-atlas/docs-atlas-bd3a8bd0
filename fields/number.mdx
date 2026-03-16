@@ -1,0 +1,94 @@
+---
+title: "Number field"
+description: "Store a floating-point number with optional step, range, and required validation."
+---
+
+The `number` field stores a floating-point number (`number | null`). It is similar to the [`integer`](/fields/integer) field but supports decimal values.
+
+Use the `step` option to control the increment size, and `validation.step` to enforce that the stored value is a multiple of the step.
+
+## Usage
+
+```typescript
+import { fields } from '@keystatic/core'
+
+cost: fields.number({
+  label: 'Cost',
+  description: 'The cost of the item, in steps of 0.02',
+  step: 0.02,
+  validation: {
+    min: 0,
+    max: 150.5,
+    step: true,
+  },
+})
+```
+
+## Options
+
+<ParamField path="label" type="string" required>
+  The label displayed in the Admin UI for this field.
+</ParamField>
+
+<ParamField path="description" type="string">
+  Descriptive text shown below the label in the Admin UI.
+</ParamField>
+
+<ParamField path="defaultValue" type="number">
+  The default value for the field. Defaults to `null` (no value).
+</ParamField>
+
+<ParamField path="step" type="number">
+  The increment size for the stepper buttons in the Admin UI. Also used for step validation when `validation.step` is `true`.
+</ParamField>
+
+<ParamField path="validation" type="object">
+  Validation options for the field.
+
+  <Expandable title="validation properties">
+    <ParamField path="validation.isRequired" type="boolean">
+      When `true`, the field must have a value (non-null).
+    </ParamField>
+    <ParamField path="validation.min" type="number">
+      The minimum allowed value (inclusive).
+    </ParamField>
+    <ParamField path="validation.max" type="number">
+      The maximum allowed value (inclusive).
+    </ParamField>
+    <ParamField path="validation.step" type="boolean">
+      When `true`, validates that the value is a multiple of the `step` option.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Return type
+
+Returns `number | null`. Returns `null` when the field is empty. If `validation.isRequired` is `true`, returns `number`.
+
+## Example
+
+```typescript
+import { collection, fields } from '@keystatic/core'
+
+products: collection({
+  label: 'Products',
+  slugField: 'name',
+  schema: {
+    name: fields.slug({ name: { label: 'Name' } }),
+    price: fields.number({
+      label: 'Price (USD)',
+      step: 0.01,
+      validation: {
+        isRequired: true,
+        min: 0,
+        step: true,
+      },
+    }),
+    discountPercent: fields.number({
+      label: 'Discount %',
+      step: 5,
+      validation: { min: 0, max: 100 },
+    }),
+  },
+})
+```

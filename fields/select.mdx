@@ -1,0 +1,75 @@
+---
+title: "Select field"
+description: "Choose a single option from a predefined list, rendered as a dropdown select in the Admin UI."
+---
+
+The `select` field renders a select dropdown in the Admin UI for choosing one option from a predefined list.
+
+You must provide an array of `options` and a `defaultValue` that matches one of the option values.
+
+## Usage
+
+```typescript
+import { fields } from '@keystatic/core'
+
+role: fields.select({
+  label: 'Role',
+  description: "The person's role at the company",
+  options: [
+    { label: 'Designer', value: 'designer' },
+    { label: 'Developer', value: 'developer' },
+    { label: 'Product manager', value: 'product-manager' },
+  ],
+  defaultValue: 'designer',
+})
+```
+
+## Options
+
+<ParamField path="label" type="string" required>
+  The label displayed in the Admin UI for this field.
+</ParamField>
+
+<ParamField path="options" type="readonly { label: string; value: string }[]" required>
+  The list of options to display. Each option requires a `label` (shown in the UI) and a `value` (stored in data).
+</ParamField>
+
+<ParamField path="defaultValue" type="string" required>
+  The value of the option that should be selected by default. Must match the `value` of one of the provided options.
+</ParamField>
+
+<ParamField path="description" type="string">
+  Descriptive text shown below the label in the Admin UI.
+</ParamField>
+
+## Return type
+
+Returns the `value` string of the selected option. TypeScript infers a union type from the provided options (e.g. `'designer' | 'developer' | 'product-manager'`).
+
+## Example
+
+```typescript
+import { collection, fields } from '@keystatic/core'
+
+authors: collection({
+  label: 'Authors',
+  slugField: 'name',
+  schema: {
+    name: fields.slug({ name: { label: 'Name' } }),
+    department: fields.select({
+      label: 'Department',
+      options: [
+        { label: 'Engineering', value: 'engineering' },
+        { label: 'Design', value: 'design' },
+        { label: 'Marketing', value: 'marketing' },
+        { label: 'Product', value: 'product' },
+      ],
+      defaultValue: 'engineering',
+    }),
+  },
+})
+```
+
+<Note>
+  The `select` field is also used as the discriminant in a [`conditional`](/fields/conditional) field to drive multi-branch schemas.
+</Note>

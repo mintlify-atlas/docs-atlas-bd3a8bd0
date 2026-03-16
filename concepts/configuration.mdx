@@ -1,0 +1,125 @@
+---
+title: "Configuration"
+description: "The Keystatic config file — where content structures, storage strategy, and UI options are defined."
+---
+
+Every Keystatic project exports a `config`. The `config()` function is imported from `@keystatic/core`:
+
+```typescript
+// keystatic.config.ts
+import { config } from '@keystatic/core'
+
+export default config({
+  // ...
+})
+```
+
+---
+
+## Example
+
+A complete config that creates a `posts` collection stored on the local file system. Each post has a `title` and a long-form `content` field:
+
+```typescript
+// keystatic.config.ts
+import { config, fields, collection } from '@keystatic/core';
+
+export default config({
+  storage: {
+    kind: 'local',
+  },
+  collections: {
+    posts: collection({
+      label: 'Posts',
+      slugField: 'title',
+      path: 'src/content/posts/*',
+      format: { contentField: 'content' },
+      schema: {
+        title: fields.slug({ name: { label: 'Title' } }),
+        content: fields.markdoc({ label: 'Content' }),
+      },
+    }),
+  },
+});
+```
+
+---
+
+## Options
+
+### `storage`
+
+Required. Defines Keystatic's storage strategy. The `kind` can be:
+
+<CardGroup cols={3}>
+  <Card title="local" icon="hard-drive" href="/concepts/local-mode">
+    Read and write files directly on the local file system.
+  </Card>
+  <Card title="github" icon="github" href="/concepts/github-mode">
+    Connect to a GitHub repository for collaborative editing.
+  </Card>
+  <Card title="cloud" href="/cloud">
+    Use Keystatic Cloud for authentication and image hosting.
+  </Card>
+</CardGroup>
+
+```typescript
+storage: { kind: 'local' }
+```
+
+### `collections`
+
+Defines repeatable content structures such as blog posts or testimonials. See the [Collections](/concepts/collections) page.
+
+### `singletons`
+
+Defines one-off content structures such as settings or a contact page. See the [Singletons](/concepts/singletons) page.
+
+### `ui`
+
+Allows customisation of parts of the Keystatic Admin UI. See the [User interface](/concepts/user-interface) page.
+
+### `branchPrefix`
+
+Scopes which GitHub branches Keystatic interacts with when using `github` or `cloud` storage:
+
+```typescript
+storage: {
+  kind: 'github',
+  repo: 'Thinkmill/keystatic',
+  branchPrefix: 'my-prefix/',
+}
+```
+
+Keystatic will only list branches starting with `my-prefix/` in the Admin UI, and will only let you create new branches with that prefix.
+
+### `cloud`
+
+Configures the [Keystatic Cloud](/cloud) project when `storage.kind` is set to `cloud`:
+
+```typescript
+cloud: { project: 'my-org/my-project' }
+```
+
+### `locale`
+
+Defines the locale for the Keystatic Admin UI.
+
+---
+
+## Type signature
+
+```typescript
+type Config = {
+  storage: LocalStorageConfig | GitHubStorageConfig | CloudStorageConfig;
+  collections?: Record<string, Collection<Record<string, ComponentSchema>, string>>;
+  singletons?: Record<string, Singleton<Record<string, ComponentSchema>>>;
+  ui?: UserInterface;
+  locale?: Locale;
+  cloud?: { project: string };
+};
+```
+
+<Tip>
+  Find the full, versioned `config` type at [docsmill.dev](https://docsmill.dev/npm/@keystatic/core@latest#/.config).
+</Tip>

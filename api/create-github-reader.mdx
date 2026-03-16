@@ -1,0 +1,137 @@
+---
+title: "createGitHubReader (API reference)"
+description: "Complete API reference for createGitHubReader, which reads Keystatic content directly from a GitHub repository."
+---
+
+`createGitHubReader` creates a `Reader` instance that fetches content from the GitHub API. It does not require a local copy of the repository and is suitable for use in SSR environments and edge functions.
+
+## Import
+
+```ts
+import { createGitHubReader } from '@keystatic/core/reader/github';
+```
+
+## Function signature
+
+```ts
+function createGitHubReader<
+  Collections extends Record<string, Collection<Record<string, ComponentSchema>, string>>,
+  Singletons extends Record<string, Singleton<Record<string, ComponentSchema>>>,
+>(
+  config: Config<Collections, Singletons>,
+  opts: {
+    repo: `${string}/${string}`;
+    pathPrefix?: string;
+    ref?: string;
+    token?: string;
+  }
+): Reader<Collections, Singletons>
+```
+
+### Parameters
+
+<ParamField path="config" type="Config<Collections, Singletons>" required>
+  The Keystatic config object returned by `config()`.
+</ParamField>
+
+<ParamField path="opts.repo" type="`${string}/${string}`" required>
+  The GitHub repository in `owner/repo` format, for example `"acme/website"`.
+</ParamField>
+
+<ParamField path="opts.ref" type="string" default="HEAD">
+  The Git ref to read from: a branch name, a tag, or a full commit SHA. Defaults to `"HEAD"` which resolves to the default branch's latest commit.
+</ParamField>
+
+<ParamField path="opts.token" type="string">
+  A GitHub Personal Access Token with at least read access to the repository. Required for private repositories. Optional for public repositories but strongly recommended to avoid hitting GitHub's anonymous rate limits (60 requests/hour).
+</ParamField>
+
+<ParamField path="opts.pathPrefix" type="string">
+  An optional sub-path within the repository to prepend to all content paths. Useful in monorepos where the `keystatic.config.ts` is in a subdirectory.
+</ParamField>
+
+### Return value
+
+Returns a `Reader<Collections, Singletons>` with `collections` and `singletons` namespaces. The interface is identical to the reader returned by `createReader`.
+
+---
+
+## Reader interface
+
+The returned reader implements the same `CollectionReader` and `SingletonReader` interfaces as `createReader`. See the [createReader API reference](/api/create-reader) for the full method signatures.
+
+### `reader.collections.<name>`
+
+| Method | Returns |
+| --- | --- |
+| `.list()` | `Promise<string[]>` |
+| `.read(slug, opts?)` | `Promise<CollectionEntry \| null>` |
+| `.readOrThrow(slug, opts?)` | `Promise<CollectionEntry>` |
+| `.all(opts?)` | `Promise<{ slug: string; entry: CollectionEntry }[]>` |
+
+### `reader.singletons.<name>`
+
+| Method | Returns |
+| --- | --- |
+| `.read(opts?)` | `Promise<SingletonEntry \| null>` |
+| `.readOrThrow(opts?)` | `Promise<SingletonEntry>` |
+
+---
+
+## How it fetches data
+
+On the first read, `createGitHubReader` makes a single request to the GitHub Trees API:
+
+```
+GET https://api.github.com/repos/{owner}/{repo}/git/trees/{ref}?recursive=1
+```
+
+This loads the entire file tree in one round-trip. The tree is cached in memory on the reader instance. Individual file reads then fetch raw content from:
+
+```
+https://raw.githubusercontent.com/{owner}/{repo}/{sha}/{path}
+```
+
+<Note>
+  The tree is cached per reader instance. If you create the reader outside of a request handler (e.g. at module level), you will need to recreate the reader to pick up new commits. Use React's `cache()` or a per-request factory function to get fresh data on each request.
+</Note>
+
+---
+
+## TypeScript utility types
+
+Same types as `createReader`:
+
+```ts
+import { Entry, EntryWithResolvedLinkedFiles } from '@keystatic/core/reader/github';
+```
+
+- `Entry<T>` — entry shape with lazy content fields
+- `EntryWithResolvedLinkedFiles<T>` — entry shape with resolved content fields
+
+---
+
+## Examples
+
+```ts
+import { createGitHubReader } from '@keystatic/core/reader/github';
+import keystaticConfig from './keystatic.config';
+
+// Read latest content from the default branch
+const reader = createGitHubReader(keystaticConfig, {
+  repo: 'acme/website',
+  token: process.env.GITHUB_TOKEN,
+});
+
+const slugs = await reader.collections.posts.list();
+const post = await reader.collections.posts.read(slugs[0], {
+  resolveLinkedFiles: true,
+});
+
+// Read from a feature branch
+const previewReader = createGitHubReader(keystaticConfig, {
+  repo: 'acme/website',
+  ref: 'feat/new-homepage',
+  token: process.env.GITHUB_TOKEN,
+});
+```

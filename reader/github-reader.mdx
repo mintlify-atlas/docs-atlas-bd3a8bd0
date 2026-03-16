@@ -1,0 +1,156 @@
+---
+title: "createGitHubReader"
+description: "Read Keystatic content directly from a GitHub repository without cloning it, using createGitHubReader."
+---
+
+`createGitHubReader` creates a reader that fetches content files directly from the GitHub API. It does not require cloning the repository and is ideal for server-side rendering in production where you want to read from a specific branch or commit.
+
+## Import
+
+```ts
+import { createGitHubReader } from '@keystatic/core/reader/github';
+```
+
+## Function signature
+
+```ts
+function createGitHubReader<Collections, Singletons>(
+  config: Config<Collections, Singletons>,
+  opts: {
+    repo: `${string}/${string}`;
+    pathPrefix?: string;
+    ref?: string;
+    token?: string;
+  }
+): Reader<Collections, Singletons>
+```
+
+### Parameters
+
+<ParamField path="config" type="Config" required>
+  Your Keystatic config object, imported from `keystatic.config.ts`.
+</ParamField>
+
+<ParamField path="opts.repo" type="string" required>
+  The GitHub repository in `owner/repo` format, for example `"Thinkmill/keystatic-data"`.
+</ParamField>
+
+<ParamField path="opts.ref" type="string" default="HEAD">
+  The Git ref (branch name, tag, or commit SHA) to read from. Defaults to `"HEAD"` which resolves to the default branch.
+</ParamField>
+
+<ParamField path="opts.token" type="string">
+  A GitHub Personal Access Token (PAT) with read access to the repository. Required for private repositories. Without a token, requests are made anonymously and are subject to GitHub's rate limits. See [GitHub's PAT documentation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) for how to generate one.
+
+  <Note>
+    This is a **Personal Access Token**, not the GitHub App Client ID or Client Secret used in `.env` for the Admin UI.
+  </Note>
+</ParamField>
+
+<ParamField path="opts.pathPrefix" type="string">
+  An optional path prefix within the repository to prepend to all content paths. Useful when the Keystatic content lives in a subdirectory of a monorepo.
+</ParamField>
+
+### Return value
+
+Returns a `Reader` object with `collections` and `singletons` namespaces. The interface is identical to the reader returned by `createReader` — see the [Reader API reference](/reader/reader-api) for all available methods.
+
+---
+
+## How it works
+
+On first use, `createGitHubReader` fetches the full Git tree for the given `ref` from the GitHub API in a single request (`/repos/:owner/:repo/git/trees/:ref?recursive=1`). Individual file reads then fetch raw file content from `raw.githubusercontent.com`. The tree fetch result is cached in memory for the lifetime of the reader instance.
+
+---
+
+## Use cases
+
+- **Production SSR** — read the latest published content from `main` without a CI pipeline
+- **Branch previews** — read from a feature branch to preview unpublished changes (see the [real-time previews recipe](/recipes/real-time-previews))
+- **Edge functions** — suitable for environments that do not have access to a local filesystem
+
+---
+
+## Collection and singleton methods
+
+The returned reader exposes the same methods as `createReader`:
+
+| Method | Description |
+| --- | --- |
+| `reader.collections.<name>.list()` | Returns `Promise<string[]>` of slugs |
+| `reader.collections.<name>.read(slug, opts?)` | Returns `Promise<Entry \| null>` |
+| `reader.collections.<name>.readOrThrow(slug, opts?)` | Returns `Promise<Entry>` or throws |
+| `reader.collections.<name>.all(opts?)` | Returns `Promise<{ slug, entry }[]>` |
+| `reader.singletons.<name>.read(opts?)` | Returns `Promise<SingletonEntry \| null>` |
+| `reader.singletons.<name>.readOrThrow(opts?)` | Returns `Promise<SingletonEntry>` or throws |
+
+All methods accept `{ resolveLinkedFiles?: boolean }` to eagerly resolve content fields.
+
+---
+
+## Examples
+
+### Read from the default branch
+
+```ts
+import { createGitHubReader } from '@keystatic/core/reader/github';
+import keystaticConfig from './keystatic.config';
+
+const reader = createGitHubReader(keystaticConfig, {
+  repo: 'my-org/my-repo',
+  token: process.env.GITHUB_TOKEN,
+});
+
+const posts = await reader.collections.posts.all();
+```
+
+### Read from a specific branch
+
+```ts
+const reader = createGitHubReader(keystaticConfig, {
+  repo: 'my-org/my-repo',
+  ref: 'staging',
+  token: process.env.GITHUB_TOKEN,
+});
+```
+
+### Read from a public repository (no token)
+
+```ts
+const reader = createGitHubReader(keystaticConfig, {
+  repo: 'my-org/public-repo',
+  // token is optional for public repos, but be mindful of rate limits
+});
+```
+
+### Draft mode reader (Next.js)
+
+See the [real-time previews recipe](/recipes/real-time-previews) for a complete example that switches between the local reader and the GitHub reader depending on Next.js draft mode.
+
+```ts
+import { createReader } from '@keystatic/core/reader';
+import { createGitHubReader } from '@keystatic/core/reader/github';
+import keystaticConfig from './keystatic.config';
+import { cache } from 'react';
+import { cookies, draftMode } from 'next/headers';
+
+export const reader = cache(() => {
+  let isDraftModeEnabled = false;
+  try {
+    isDraftModeEnabled = draftMode().isEnabled;
+  } catch {}
+
+  if (isDraftModeEnabled) {
+    const branch = cookies().get('ks-branch')?.value;
+    if (branch) {
+      return createGitHubReader(keystaticConfig, {
+        repo: 'my-org/my-repo',
+        ref: branch,
+        token: cookies().get('keystatic-gh-access-token')?.value,
+      });
+    }
+  }
+
+  return createReader(process.cwd(), keystaticConfig);
+});
+```

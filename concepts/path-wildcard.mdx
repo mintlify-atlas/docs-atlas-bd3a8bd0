@@ -1,0 +1,87 @@
+---
+title: "Path wildcard"
+description: "Use wildcard patterns in the collection path option to precisely control where Keystatic stores content entries."
+---
+
+The `path` option on a [collection](/concepts/collections) uses a glob-style wildcard pattern to control where entries are stored. This gives you fine-grained control over your file structure.
+
+<Note>
+  The `path` wildcard is only for collections — singletons do not use a wildcard because they only have one entry.
+</Note>
+
+---
+
+## Single wildcard `*`
+
+A single `*` matches one path segment (a single directory or filename). This is the most common wildcard and is required for all collection paths.
+
+The `*` is replaced by the entry's slug when a file is created.
+
+```typescript
+path: 'content/posts/*/'
+// Produces: content/posts/my-post/index.yaml
+```
+
+### Nested folder output
+
+You can place the wildcard in the middle of a path to collocate content with source code. For example, in a monorepo with a design system, you might want documentation to live alongside each component:
+
+```
+root
+├── packages
+│   └── design-system
+│       ├── button
+│       │   └── src
+│       └── dropdown
+│           └── src
+└── apps
+    └── docs  ← Keystatic lives here
+```
+
+```typescript
+path: 'packages/design-system/*/docs/'
+```
+
+With this path, each collection entry maps to `packages/design-system/{component-name}/docs/`, collocating documentation with the component it describes.
+
+---
+
+## Double wildcard `**`
+
+A `**` wildcard allows slugs to contain `/` characters, enabling multi-level folder structures within a single collection.
+
+```typescript
+path: 'content/posts/**'
+```
+
+With `**`, you can create entries with slugs like `en/post-1` and `fr/post-1`, which produce:
+
+```bash
+content
+└── posts
+    ├── en
+    │   └── post-1.mdoc
+    └── fr
+        └── post-1.mdoc
+```
+
+This is useful for multilingual content or any scenario requiring nested sub-paths within the same collection.
+
+---
+
+## Path patterns summary
+
+| Pattern | Example slug | Output path |
+| --- | --- | --- |
+| `content/posts/*/` | `my-post` | `content/posts/my-post/index.yaml` |
+| `content/posts/*` | `my-post` | `content/posts/my-post.yaml` |
+| `packages/design-system/*/docs/` | `button` | `packages/design-system/button/docs/index.yaml` |
+| `content/posts/**` | `en/my-post` | `content/posts/en/my-post.yaml` |
+
+---
+
+## Connection to `slugField`
+
+The wildcard in `path` is filled in by the value of the field referenced by `slugField`. For example, if `slugField: 'title'` and the title slug is `hello-world`, the entry is stored at `content/posts/hello-world/`.
+
+See [Collections](/concepts/collections) for more on `slugField`, and [Content organisation](/concepts/content-organisation) for how the trailing slash affects file structure.

@@ -1,0 +1,154 @@
+---
+title: "Content & Fields"
+description: "Overview of all field types available in Keystatic for building content schemas."
+---
+
+Keystatic fields are the building blocks of your content schema. Every collection and singleton is defined by a set of fields that determine what data editors can enter and how it is stored in your repository.
+
+Fields are imported from `@keystatic/core` and used inside the `schema` object of a collection or singleton.
+
+```typescript
+import { collection, fields } from '@keystatic/core'
+
+export default config({
+  collections: {
+    posts: collection({
+      label: 'Posts',
+      slugField: 'title',
+      schema: {
+        title: fields.slug({ name: { label: 'Title' } }),
+        published: fields.date({ label: 'Published date' }),
+        draft: fields.checkbox({ label: 'Draft', defaultValue: false }),
+        category: fields.select({
+          label: 'Category',
+          options: [
+            { label: 'Engineering', value: 'engineering' },
+            { label: 'Design', value: 'design' },
+          ],
+          defaultValue: 'engineering',
+        }),
+        coverImage: fields.image({
+          label: 'Cover image',
+          directory: 'public/images/posts',
+          publicPath: '/images/posts/',
+        }),
+        content: fields.markdoc({ label: 'Content' }),
+      },
+    }),
+  },
+})
+```
+
+---
+
+## Primitive fields
+
+Simple scalar values — strings, numbers, booleans, and dates.
+
+<CardGroup cols={2}>
+  <Card title="Text" href="/fields/text">
+    Single-line or multiline string input.
+  </Card>
+  <Card title="Integer" href="/fields/integer">
+    Whole number with optional min/max validation.
+  </Card>
+  <Card title="Number" href="/fields/number">
+    Floating-point number with optional step and range validation.
+  </Card>
+  <Card title="Checkbox" href="/fields/checkbox">
+    Boolean true/false toggle.
+  </Card>
+  <Card title="Select" href="/fields/select">
+    Single option chosen from a predefined list.
+  </Card>
+  <Card title="Multiselect" href="/fields/multiselect">
+    Zero or more options chosen from a predefined list.
+  </Card>
+  <Card title="Date" href="/fields/date">
+    ISO 8601 date string (`YYYY-MM-DD`).
+  </Card>
+  <Card title="Datetime" href="/fields/datetime">
+    Local datetime string from a datetime-local input.
+  </Card>
+  <Card title="URL" href="/fields/url">
+    Sanitised URL string.
+  </Card>
+</CardGroup>
+
+---
+
+## Asset fields
+
+Fields that store files or references to files.
+
+<CardGroup cols={2}>
+  <Card title="Image" href="/fields/image">
+    Upload and store an image file, with configurable directory and public path.
+  </Card>
+  <Card title="File" href="/fields/file">
+    Upload and store any file type, with configurable directory and public path.
+  </Card>
+  <Card title="Path reference" href="/fields/path-reference">
+    Reference an existing file in the repository by path.
+  </Card>
+</CardGroup>
+
+---
+
+## Identifier fields
+
+<CardGroup cols={1}>
+  <Card title="Slug" href="/fields/slug">
+    Pairs a text label with an auto-generated URL-friendly slug. Used with the `slugField` option on collections.
+  </Card>
+</CardGroup>
+
+---
+
+## Composite fields
+
+Fields that combine other fields together.
+
+<CardGroup cols={2}>
+  <Card title="Object" href="/fields/object">
+    A named group of fields, similar to an HTML `fieldset`.
+  </Card>
+  <Card title="Array" href="/fields/array">
+    A repeating list of a single field or object.
+  </Card>
+  <Card title="Conditional" href="/fields/conditional">
+    Displays different fields based on the value of a checkbox or select.
+  </Card>
+  <Card title="Blocks" href="/fields/blocks">
+    A repeating list where each item can be a different field type.
+  </Card>
+</CardGroup>
+
+---
+
+## Relationship fields
+
+<CardGroup cols={1}>
+  <Card title="Relationship" href="/fields/relationship">
+    References the slug of an entry in another collection.
+  </Card>
+</CardGroup>
+
+---
+
+## Rich-text fields
+
+WYSIWYG editors that store structured content.
+
+<CardGroup cols={2}>
+  <Card title="Markdoc" href="/fields/markdoc">
+    WYSIWYG editor that outputs `.mdoc` (Markdoc) files.
+  </Card>
+  <Card title="MDX" href="/fields/mdx">
+    WYSIWYG editor that outputs `.mdx` files.
+  </Card>
+</CardGroup>
+
+<Card title="Content components" href="/fields/content-components">
+  Custom embeddable components for use inside Markdoc and MDX fields.
+</Card>

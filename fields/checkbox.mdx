@@ -1,0 +1,62 @@
+---
+title: "Checkbox field"
+description: "Store a boolean true/false value rendered as a checkbox in the Admin UI."
+---
+
+The `checkbox` field stores a `boolean`. In the Admin UI it renders as a single checkbox.
+
+## Usage
+
+```typescript
+import { fields } from '@keystatic/core'
+
+draft: fields.checkbox({
+  label: 'Draft',
+  description: 'Set this post as draft to prevent it from being published',
+})
+```
+
+## Options
+
+<ParamField path="label" type="string" required>
+  The label displayed in the Admin UI for this field.
+</ParamField>
+
+<ParamField path="description" type="string">
+  Descriptive text shown below the label in the Admin UI.
+</ParamField>
+
+<ParamField path="defaultValue" type="boolean">
+  The default value for the field. Defaults to `false`.
+</ParamField>
+
+## Return type
+
+Returns `boolean`.
+
+## Example
+
+```typescript
+import { collection, fields } from '@keystatic/core'
+
+posts: collection({
+  label: 'Posts',
+  slugField: 'title',
+  schema: {
+    title: fields.slug({ name: { label: 'Title' } }),
+    draft: fields.checkbox({
+      label: 'Draft',
+      description: 'Unpublished posts are not visible on the site.',
+      defaultValue: true,
+    }),
+    featured: fields.checkbox({
+      label: 'Featured',
+      defaultValue: false,
+    }),
+  },
+})
+```
+
+<Tip>
+  The `checkbox` field is also commonly used as the discriminant in a [`conditional`](/fields/conditional) field to toggle optional field groups on or off.
+</Tip>

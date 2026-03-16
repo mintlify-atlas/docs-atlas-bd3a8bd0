@@ -1,0 +1,84 @@
+---
+title: "Integer field"
+description: "Store a whole number with optional min, max, and required validation."
+---
+
+The `integer` field stores a whole number (`number | null`). It renders a number input in the Admin UI.
+
+You can optionally constrain the value with `validation.min` and `validation.max`.
+
+## Usage
+
+```typescript
+import { fields } from '@keystatic/core'
+
+age: fields.integer({
+  label: 'Age',
+  description: "The person's age",
+  validation: {
+    min: 0,
+    max: 120,
+  },
+})
+```
+
+## Options
+
+<ParamField path="label" type="string" required>
+  The label displayed in the Admin UI for this field.
+</ParamField>
+
+<ParamField path="description" type="string">
+  Descriptive text shown below the label in the Admin UI.
+</ParamField>
+
+<ParamField path="defaultValue" type="number">
+  The default value for the field. Defaults to `null` (no value).
+</ParamField>
+
+<ParamField path="validation" type="object">
+  Validation options for the field.
+
+  <Expandable title="validation properties">
+    <ParamField path="validation.isRequired" type="boolean">
+      When `true`, the field must have a value (non-null).
+    </ParamField>
+    <ParamField path="validation.min" type="number">
+      The minimum allowed value (inclusive).
+    </ParamField>
+    <ParamField path="validation.max" type="number">
+      The maximum allowed value (inclusive).
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Return type
+
+Returns `number | null`. Returns `null` when the field is empty. If `validation.isRequired` is `true`, returns `number`.
+
+## Example
+
+```typescript
+import { collection, fields } from '@keystatic/core'
+
+products: collection({
+  label: 'Products',
+  slugField: 'name',
+  schema: {
+    name: fields.slug({ name: { label: 'Name' } }),
+    stockCount: fields.integer({
+      label: 'Stock count',
+      description: 'Current inventory level.',
+      defaultValue: 0,
+      validation: {
+        isRequired: true,
+        min: 0,
+      },
+    }),
+    sortOrder: fields.integer({
+      label: 'Sort order',
+      validation: { min: 1, max: 999 },
+    }),
+  },
+})
+```

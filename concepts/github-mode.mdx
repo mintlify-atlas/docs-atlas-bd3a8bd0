@@ -1,0 +1,129 @@
+---
+title: "GitHub mode"
+description: "Connect Keystatic to a GitHub repository for collaborative content editing, branch-based workflows, and deployed environments."
+---
+
+Keystatic's `github` storage mode connects the Admin UI to a GitHub repository. Collaborators with `write` access to the repository can log in and edit content directly — without touching code.
+
+---
+
+## Setting up GitHub mode
+
+<Steps>
+  <Step title="Update your storage config">
+    Change the `storage` option in your Keystatic config to use the `github` kind. Specify the repository `owner` and `name`:
+
+    ```typescript
+    storage: {
+      kind: 'github',
+      repo: {
+        owner: REPO_OWNER,
+        name: REPO_NAME,
+      },
+    }
+    ```
+
+    You can also pass the repo as a single `owner/name` string:
+
+    ```typescript
+    storage: {
+      kind: 'github',
+      repo: `${REPO_OWNER}/${REPO_NAME}`,
+    }
+    ```
+  </Step>
+
+  <Step title="Visit /keystatic and log in">
+    With `github` mode configured, visit the `/keystatic` route in your browser. You will be prompted to log in with GitHub.
+
+    The first time you click **Login with GitHub**, the setup wizard starts. If you know your deployed project URL or the repo is owned by a GitHub organisation, fill in those fields. Otherwise, leave them blank and click **Create GitHub App**.
+  </Step>
+
+  <Step title="Create a custom GitHub App">
+    The wizard walks you through creating a GitHub App. Choose a name for your app and proceed.
+  </Step>
+
+  <Step title="Grant repository access">
+    Grant the new GitHub App access to your repository when prompted. After confirming permissions, you are redirected back to your local Keystatic Admin UI — now running in `github` mode.
+
+    <Tip>
+      You can tell Keystatic is running in `github` mode by the branch dropdown and GitHub repository UI elements visible in the Admin UI.
+    </Tip>
+  </Step>
+</Steps>
+
+---
+
+## Environment variables
+
+During setup, Keystatic generates environment variables in a `.env` file in your project:
+
+```bash
+# Keystatic
+KEYSTATIC_GITHUB_CLIENT_ID=...
+KEYSTATIC_GITHUB_CLIENT_SECRET=...
+KEYSTATIC_SECRET=...
+NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG=...  # Next.js
+# PUBLIC_KEYSTATIC_GITHUB_APP_SLUG=...     # Astro
+```
+
+These variables authenticate users with GitHub based on their access to the repository. Anyone with `write` access who visits `/keystatic` will be able to log in.
+
+<Warning>
+  Never commit these environment variables to version control. Add `.env` to your `.gitignore`.
+</Warning>
+
+---
+
+## Branch prefix
+
+Use `branchPrefix` to restrict which GitHub branches Keystatic can see and create:
+
+```typescript
+storage: {
+  kind: 'github',
+  repo: 'Thinkmill/keystatic',
+  branchPrefix: 'my-prefix/',
+}
+```
+
+Keystatic will only list branches starting with `my-prefix/` in the Admin UI, and will only let editors create new branches with that prefix.
+
+---
+
+## Fixing a redirect_uri error
+
+If you see the following error from GitHub after authorising on a deployed server:
+
+```
+The redirect_uri is not associated with this application.
+```
+
+You need to add the redirect URL to your GitHub App settings:
+
+<Steps>
+  <Step title="Go to your installed GitHub Apps">
+    - **Users:** `https://github.com/settings/installations`
+    - **Organisations:** `https://github.com/organizations/<org-name>/settings/installations`
+  </Step>
+
+  <Step title="Open app settings">
+    Select the app, then choose **App settings**.
+
+    - **Users:** `https://github.com/settings/apps/<app-slug>`
+    - **Organisations:** `https://github.com/organizations/<org-name>/settings/apps/<app-slug>`
+  </Step>
+
+  <Step title="Add the callback URL">
+    Click **Add Callback URL**, enter the additional URL, and save. Reload the authentication page.
+  </Step>
+</Steps>
+
+---
+
+## Deploying Keystatic
+
+When deploying to a hosting provider:
+
+- Copy all Keystatic environment variables to your deployed environment.
+- Ensure your host can run Node.js for Keystatic's API routes.

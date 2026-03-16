@@ -1,0 +1,102 @@
+---
+title: "Object field"
+description: "Group a set of fields together under a named object, similar to an HTML fieldset."
+---
+
+The `object` field creates a named group of fields. It is particularly useful inside an [`array`](/fields/array), [`conditional`](/fields/conditional), or [`blocks`](/fields/blocks) field where each item needs more than one data property.
+
+An optional second argument lets you provide a `label`, `description`, and `layout` to control how the group is presented in the Admin UI.
+
+## Usage
+
+<CodeGroup>
+
+```typescript Simple
+snapshot: fields.object({
+  name: fields.text({ label: 'Name' }),
+  age: fields.integer({ label: 'Age' }),
+})
+```
+
+```typescript With label and layout
+address: fields.object(
+  {
+    street: fields.text({ label: 'Street' }),
+    city: fields.text({ label: 'City' }),
+    state: fields.text({ label: 'State' }),
+    postcode: fields.text({ label: 'Postcode' }),
+    country: fields.text({ label: 'Country' }),
+  },
+  {
+    label: 'Address',
+    description: 'The mailing address.',
+    layout: [12, 6, 3, 3, 12],
+  }
+)
+```
+
+</CodeGroup>
+
+## Arguments
+
+<ParamField path="fields" type="Record<string, ComponentSchema>" required>
+  An object where each key is a field name and each value is any Keystatic field.
+</ParamField>
+
+<ParamField path="options" type="object">
+  Optional display options for the field group.
+
+  <Expandable title="options properties">
+    <ParamField path="options.label" type="string">
+      A label for the field group, displayed as a section heading in the Admin UI.
+    </ParamField>
+    <ParamField path="options.description" type="string">
+      A description for the field group.
+    </ParamField>
+    <ParamField path="options.layout" type="number[]">
+      An array of column spans (each between 1 and 12) that map to the fields in order. The grid supports 12 columns. For example, `[6, 6]` places two fields side by side in equal columns, and `[12, 8, 4]` places one field spanning the full width followed by two fields in an 8/4 split.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Return type
+
+Returns an object whose keys match the provided `fields` and whose values are the read values of those fields.
+
+## Example
+
+```typescript
+import { collection, fields } from '@keystatic/core'
+
+people: collection({
+  label: 'People',
+  slugField: 'name',
+  schema: {
+    name: fields.slug({ name: { label: 'Name' } }),
+    address: fields.object(
+      {
+        street: fields.text({ label: 'Street' }),
+        city: fields.text({ label: 'City' }),
+        state: fields.text({ label: 'State' }),
+        postcode: fields.text({ label: 'Postcode' }),
+        country: fields.text({ label: 'Country' }),
+      },
+      {
+        label: 'Address',
+        description: 'Mailing address for postal correspondence.',
+        layout: [12, 6, 3, 3, 12],
+      }
+    ),
+    projects: fields.array(
+      fields.relationship({
+        label: 'Project',
+        collection: 'projects',
+      }),
+      {
+        label: 'Projects',
+        itemLabel: props => props.value ?? 'Select a project',
+      }
+    ),
+  },
+})
+```

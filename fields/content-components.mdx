@@ -1,0 +1,262 @@
+---
+title: "Content components"
+description: "Define custom embeddable components for use inside Markdoc and MDX rich-text fields."
+---
+
+Content components are custom building blocks that editors can insert into [`markdoc`](/fields/markdoc) or [`mdx`](/fields/mdx) rich-text fields. They extend the editor with domain-specific elements such as callouts, testimonials, video embeds, and more.
+
+Define content components by passing a `components` object to the field:
+
+```typescript
+import { fields } from '@keystatic/core'
+import { wrapper, block } from '@keystatic/core/content-components'
+
+richText: fields.mdx({
+  label: 'Rich text',
+  components: {
+    Callout: wrapper({ /* ... */ }),
+    VideoEmbed: block({ /* ... */ }),
+  },
+})
+```
+
+There are five component types, each suited to a different use case.
+
+---
+
+## Wrapper
+
+A `wrapper` component has opening and closing tags. The content between the tags is freeform rich text (or other content components).
+
+```typescript
+import { wrapper } from '@keystatic/core/content-components'
+
+Testimonial: wrapper({
+  label: 'Testimonial',
+  schema: {
+    author: fields.text({ label: 'Author' }),
+    role: fields.text({ label: 'Role' }),
+  },
+})
+```
+
+MDX output:
+
+```mdx
+<Testimonial author="Jina Dawkins" role="Head of Product Design">
+
+  I've been very impressed with the work done by the team.
+
+</Testimonial>
+```
+
+---
+
+## Block
+
+A `block` component is self-closing and has no children. Use it for standalone embeds such as videos, charts, or data visualisations.
+
+```typescript
+import { block } from '@keystatic/core/content-components'
+
+Playlist: block({
+  label: 'Playlist',
+  schema: {
+    id: fields.text({ label: 'Playlist ID' }),
+  },
+})
+```
+
+MDX output:
+
+```mdx
+<Playlist id="5f8a3b3e3f3e4d001f3e4d00" />
+```
+
+---
+
+## Inline
+
+An `inline` component is like a `block` but sits inside a paragraph or other inline text content.
+
+```typescript
+import { inline } from '@keystatic/core/content-components'
+
+StatusBadge: inline({
+  label: 'Status badge',
+  schema: {
+    status: fields.select({
+      label: 'Status',
+      options: [
+        { label: 'To do', value: 'todo' },
+        { label: 'In progress', value: 'in-progress' },
+        { label: 'Done', value: 'done' },
+      ],
+      defaultValue: 'todo',
+    }),
+  },
+})
+```
+
+MDX output:
+
+```mdx
+This task is <StatusBadge status="in-progress" /> but has no blockers.
+```
+
+---
+
+## Mark
+
+A `mark` component lets editors highlight or annotate selected text, similar to applying bold or italic formatting.
+
+```typescript
+import { mark } from '@keystatic/core/content-components'
+
+Highlight: mark({
+  label: 'Highlight',
+  schema: {
+    variant: fields.select({
+      label: 'Variant',
+      options: [
+        { label: 'Fluro', value: 'fluro' },
+        { label: 'Minimal', value: 'minimal' },
+        { label: 'Brutalist', value: 'brutalist' },
+      ],
+      defaultValue: 'fluro',
+    }),
+  },
+})
+```
+
+MDX output:
+
+```mdx
+This is a <Highlight variant="fluro">highlighted</Highlight> word.
+```
+
+---
+
+## Repeating
+
+A `repeating` component defines a parent/child relationship where a list of explicitly defined child components is nested inside a parent. Use it for patterns like testimonial grids, tab groups, or carousels.
+
+```typescript
+import { repeating, wrapper } from '@keystatic/core/content-components'
+
+TestimonialGrid: repeating({
+  label: 'Testimonial grid',
+  children: ['Testimonial'],
+  schema: {
+    columns: fields.integer({
+      label: 'Columns',
+      validation: { min: 1, max: 6 },
+    }),
+  },
+}),
+Testimonial: wrapper({
+  label: 'Testimonial',
+  schema: {
+    author: fields.text({ label: 'Author' }),
+    role: fields.text({ label: 'Role' }),
+  },
+})
+```
+
+MDX output:
+
+```mdx
+<TestimonialGrid columns={2}>
+  <Testimonial author="Jina Dawkins" role="Head of Product Design">
+
+    I've been very impressed with the work done by the team.
+
+  </Testimonial>
+  <Testimonial author="Leesa Edwards" role="CMO">
+
+    The team makes my job easy!
+
+  </Testimonial>
+</TestimonialGrid>
+```
+
+---
+
+## Summary of component types
+
+| Type | Tags | Children | Inline |
+|------|------|----------|--------|
+| `wrapper` | Open + close | Rich text or components | No |
+| `block` | Self-closing | None | No |
+| `inline` | Self-closing | None | Yes |
+| `mark` | Applied to selection | Text | Yes |
+| `repeating` | Open + close | Explicit list of components | No |
+
+---
+
+## Full example
+
+```typescript
+import { collection, fields } from '@keystatic/core'
+import {
+  wrapper,
+  block,
+  inline,
+  mark,
+  repeating,
+} from '@keystatic/core/content-components'
+
+posts: collection({
+  label: 'Posts',
+  slugField: 'title',
+  schema: {
+    title: fields.slug({ name: { label: 'Title' } }),
+    content: fields.mdx({
+      label: 'Content',
+      components: {
+        Callout: wrapper({
+          label: 'Callout',
+          schema: {
+            type: fields.select({
+              label: 'Type',
+              options: [
+                { label: 'Info', value: 'info' },
+                { label: 'Warning', value: 'warning' },
+                { label: 'Tip', value: 'tip' },
+              ],
+              defaultValue: 'info',
+            }),
+          },
+        }),
+        VideoEmbed: block({
+          label: 'Video embed',
+          schema: {
+            url: fields.url({
+              label: 'Video URL',
+              validation: { isRequired: true },
+            }),
+            caption: fields.text({ label: 'Caption' }),
+          },
+        }),
+        Highlight: mark({
+          label: 'Highlight',
+          schema: {
+            colour: fields.select({
+              label: 'Colour',
+              options: [
+                { label: 'Yellow', value: 'yellow' },
+                { label: 'Green', value: 'green' },
+              ],
+              defaultValue: 'yellow',
+            }),
+          },
+        }),
+      },
+    }),
+  },
+})
+```
+
+<Note>
+  Refer to the [content-components type signature](https://docsmill.dev/npm/@keystatic/core@latest#/content-components) for the full API including `ContentView` for editor previews and `forSpecificLocations` to restrict where components can be inserted.
+</Note>

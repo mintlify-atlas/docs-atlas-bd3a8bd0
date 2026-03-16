@@ -1,0 +1,79 @@
+---
+title: "Introduction"
+description: "Keystatic is a Git-based CMS with a TypeScript API, no database required. Manage content directly from your codebase."
+---
+
+Keystatic is designed to work when you're creating a new site, or to introduce content management into your existing codebase.
+
+It stores content as files — Markdown, YAML, or JSON — committed directly to your Git repository. There is no external database, no separate content API to host, and no vendor lock-in. Your content lives alongside your code.
+
+Keystatic provides:
+
+- A **TypeScript-first config API** to define your content structure using strongly-typed fields
+- An **admin UI** you can run locally or deploy to production for editors to manage content
+- **Three storage modes** to match your workflow — local files, GitHub, or Keystatic Cloud
+- Official integration with **Next.js**, **Astro**, and **Remix**
+
+## How it works
+
+You define your content schema in a `keystatic.config.ts` file using the `config`, `collection`, and `singleton` functions exported from `@keystatic/core`. Keystatic reads that config to render the admin UI and to validate content.
+
+When an editor saves content, Keystatic writes structured files to your repository. You read those files back using the Keystatic reader API — a type-safe way to load content at build time or in server components.
+
+Because content is stored as plain files, you can also read and edit it with any text editor, version-control it with Git, and review changes in pull requests like any other code.
+
+## Storage modes
+
+Keystatic supports three storage modes. You configure one in your `keystatic.config.ts`.
+
+<CardGroup cols={3}>
+  <Card title="Local" icon="folder-open">
+    Content is written to your local file system. Best for development and prototyping. No GitHub account or network access required.
+  </Card>
+  <Card title="GitHub" icon="github">
+    Content is committed directly to a GitHub repository. Editors need a GitHub account. Ideal for teams already using GitHub.
+  </Card>
+  <Card title="Cloud" href="/cloud" icon="cloud">
+    Keystatic Cloud handles GitHub authentication for you. Editors don't need a GitHub account. Adds opt-in features like Cloud Images and multiplayer editing.
+  </Card>
+</CardGroup>
+
+### Local mode
+
+Set `storage: { kind: 'local' }` in your config. Keystatic reads and writes files in your project directory. Use this mode during development — you can switch to GitHub or Cloud mode when you're ready to deploy.
+
+### GitHub mode
+
+Set `storage: { kind: 'github', repo: 'owner/repo' }` to commit content directly to a GitHub repository. You'll need to set up a GitHub OAuth app and configure environment variables. See the [GitHub mode guide](/concepts/github-mode) for the full setup.
+
+### Cloud mode
+
+Set `storage: { kind: 'cloud' }` and add `cloud: { project: 'team/project' }` to use [Keystatic Cloud](/cloud). Cloud manages the GitHub authentication flow for you, so editors can log in without a GitHub account. See the [Keystatic Cloud page](/cloud) for setup instructions.
+
+## Supported frameworks
+
+Keystatic has official integrations for three frameworks:
+
+- **Next.js** — App Router and Pages Router are both supported
+- **Astro** — works with Astro's content collections or standalone
+- **Remix** — full support via the Remix adapter
+
+Each framework integration provides a helper to mount the Keystatic API route and the admin UI. See the integration guides for step-by-step setup.
+
+## Get started
+
+<CardGroup cols={2}>
+  <Card title="Quick start" href="/quick-start" icon="rocket">
+    Scaffold a new Keystatic project in minutes using the `create-keystatic` CLI.
+  </Card>
+  <Card title="Add to an existing project" icon="plug">
+    Follow the integration guide for your framework:
+    [Next.js](/installation/next-js) · [Astro](/installation/astro) · [Remix](/installation/remix)
+  </Card>
+  <Card title="Core concepts" href="/concepts/content-organisation" icon="book">
+    Learn how collections, singletons, fields, and storage modes work together.
+  </Card>
+  <Card title="Keystatic Cloud" href="/cloud" icon="cloud">
+    Simplify authentication and unlock team collaboration features.
+  </Card>
+</CardGroup>

@@ -1,0 +1,112 @@
+---
+title: "Image field"
+description: "Upload and store an image file with configurable storage directory and public path prefix."
+---
+
+The `image` field lets editors upload an image. The image is stored on the local filesystem or committed into your GitHub repository.
+
+For cloud-hosted images, see the `cloudImage` field designed for Keystatic Cloud.
+
+## Usage
+
+```typescript
+import { fields } from '@keystatic/core'
+
+avatar: fields.image({
+  label: 'Avatar',
+  directory: 'public/images/avatars',
+  publicPath: '/images/avatars/',
+})
+```
+
+## Options
+
+<ParamField path="label" type="string" required>
+  The label displayed in the Admin UI for this field.
+</ParamField>
+
+<ParamField path="description" type="string">
+  Descriptive text shown below the label in the Admin UI.
+</ParamField>
+
+<ParamField path="directory" type="string">
+  The directory in your project tree where uploaded images are stored. Useful for placing images inside a `public` or `static` directory. Defaults to placing images alongside the entry file.
+</ParamField>
+
+<ParamField path="publicPath" type="string">
+  A prefix prepended to the stored filename to produce the final `src` path. The entry slug and field name are appended automatically.
+
+  For example, with `publicPath: '/images/avatars/'` and entry slug `john-doe`, the stored value becomes `/images/avatars/john-doe/avatar.jpg`.
+</ParamField>
+
+<ParamField path="validation" type="object">
+  Validation options for the field.
+
+  <Expandable title="validation properties">
+    <ParamField path="validation.isRequired" type="boolean">
+      When `true`, an image must be uploaded.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="transformFilename" type="(originalFilename: string) => string">
+  A function to transform the filename when the image field is used inside a `markdoc` or `mdx` field. Has no effect when used as a standalone schema field.
+</ParamField>
+
+## Return type
+
+When reading via the Reader API, returns `string | null` — the stored path (with `publicPath` prefix applied, if set). Returns `null` when no image has been uploaded. If `validation.isRequired` is `true`, returns `string`.
+
+## Storage behaviour
+
+By default, Keystatic creates a subdirectory named after the entry slug inside the collection directory and places the image there:
+
+```
+authors/
+├── john-doe/
+│   └── avatar.jpg
+└── john-doe.yaml
+```
+
+The `john-doe.yaml` file stores a relative reference:
+
+```yaml
+avatar: avatar.jpg
+```
+
+Configuring `directory` and `publicPath` together lets you place images in a framework-friendly location and store a usable `src` path:
+
+```typescript
+avatar: fields.image({
+  label: 'Avatar',
+  directory: 'public/images/avatars',
+  publicPath: '/images/avatars/',
+})
+```
+
+With this configuration the value stored in the YAML becomes:
+
+```yaml
+avatar: /images/avatars/john-doe/avatar.jpg
+```
+
+## Example
+
+```typescript
+import { collection, fields } from '@keystatic/core'
+
+authors: collection({
+  label: 'Authors',
+  slugField: 'name',
+  schema: {
+    name: fields.slug({ name: { label: 'Name' } }),
+    avatar: fields.image({
+      label: 'Avatar',
+      description: 'A square profile photo.',
+      directory: 'public/images/authors',
+      publicPath: '/images/authors/',
+      validation: { isRequired: true },
+    }),
+  },
+})
+```

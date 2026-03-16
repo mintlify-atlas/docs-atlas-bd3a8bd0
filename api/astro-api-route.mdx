@@ -1,0 +1,141 @@
+---
+title: "@keystatic/astro"
+description: "API reference for the @keystatic/astro package — the Astro integration and API route handler."
+---
+
+The `@keystatic/astro` package provides two exports:
+
+- A default **Astro integration** that injects the Admin UI and API routes automatically
+- A `makeHandler` function for manually creating an API route handler
+
+## Installation
+
+```bash
+npm install @keystatic/astro
+```
+
+---
+
+## Astro Integration
+
+### Import
+
+```ts
+import keystatic from '@keystatic/astro';
+```
+
+### Function signature
+
+```ts
+function keystatic(): AstroIntegration
+```
+
+This is the default export from `@keystatic/astro`.
+
+### Usage
+
+Add `keystatic()` to the `integrations` array in `astro.config.mjs`:
+
+```js
+// astro.config.mjs
+import { defineConfig } from 'astro/config';
+import react from '@astrojs/react';
+import markdoc from '@astrojs/markdoc';
+import keystatic from '@keystatic/astro';
+
+export default defineConfig({
+  integrations: [react(), markdoc(), keystatic()],
+});
+```
+
+<Note>
+  The `@astrojs/react` integration is required because the Keystatic Admin UI is a React application.
+</Note>
+
+### What the integration does
+
+When added to your Astro config, the `keystatic()` integration automatically:
+
+1. Injects the Admin UI page at `/keystatic/[...params]` (server-rendered, not prerendered)
+2. Injects the API route at `/api/keystatic/[...params]` (server-rendered, not prerendered)
+3. Adds a Vite plugin that resolves `virtual:keystatic-config` to your `keystatic.config.*` file
+4. Creates `.astro/keystatic-imports.js` to ensure correct dependency optimization
+
+---
+
+## API Route Handler: `makeHandler`
+
+For advanced use cases where you need to control the API route yourself, use `makeHandler` directly.
+
+### Import
+
+```ts
+import { makeHandler } from '@keystatic/astro/api';
+```
+
+### Function signature
+
+```ts
+function makeHandler(
+  config: APIRouteConfig
+): (context: APIContext) => Promise<Response>
+```
+
+### Parameters
+
+<ParamField path="config" type="APIRouteConfig" required>
+  <Expandable title="APIRouteConfig properties">
+    <ParamField path="config.config" type="Config" required>
+      Your Keystatic config object, imported from `keystatic.config.ts`.
+    </ParamField>
+
+    <ParamField path="config.clientId" type="string">
+      GitHub App Client ID. Defaults to the `KEYSTATIC_GITHUB_CLIENT_ID` environment variable (or `import.meta.env.KEYSTATIC_GITHUB_CLIENT_ID` in Astro).
+    </ParamField>
+
+    <ParamField path="config.clientSecret" type="string">
+      GitHub App Client Secret. Defaults to `KEYSTATIC_GITHUB_CLIENT_SECRET`.
+    </ParamField>
+
+    <ParamField path="config.secret" type="string">
+      Session encryption secret. Defaults to `KEYSTATIC_SECRET`.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Return value
+
+<ResponseField name="handler" type="(context: APIContext) => Promise<Response>">
+  An Astro API route handler function. Assign it to the named export for each HTTP method you want to handle.
+</ResponseField>
+
+### Usage
+
+Create `src/pages/api/keystatic/[...params].ts`:
+
+```ts
+// src/pages/api/keystatic/[...params].ts
+import { makeHandler } from '@keystatic/astro/api';
+import keystaticConfig from '../../../../keystatic.config';
+
+export const all = makeHandler({ config: keystaticConfig });
+```
+
+---
+
+## Environment variables
+
+`makeHandler` reads environment variables from both `process.env` and Astro's `import.meta.env`. For Cloudflare Workers and other environments, it also reads from `context.locals.runtime.env`.
+
+| Variable | Used for |
+| --- | --- |
+| `KEYSTATIC_GITHUB_CLIENT_ID` | GitHub OAuth App client ID |
+| `KEYSTATIC_GITHUB_CLIENT_SECRET` | GitHub OAuth App client secret |
+| `KEYSTATIC_SECRET` | Session encryption secret |
+| `PUBLIC_KEYSTATIC_GITHUB_APP_SLUG` | GitHub App slug for the Admin UI |
+
+---
+
+## Disabling in production
+
+See the [Astro: Disable Admin UI in Production](/recipes/astro-disable-admin-ui-in-production) recipe for a pattern to conditionally exclude the integration from production builds using an environment variable.

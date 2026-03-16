@@ -1,0 +1,83 @@
+---
+title: "Singletons"
+description: "Define one-off content structures in Keystatic — site settings, a homepage, a contact page — using the singleton() function."
+---
+
+A `singleton` is a single, unique data entry. Use it for content that only exists once: site settings, a homepage configuration, or a contact page.
+
+Singletons are defined within the `singletons` key of the Keystatic `config`. Each singleton has its own key and is wrapped in a `singleton()` function.
+
+## Example
+
+Here's how to define a `settings` singleton:
+
+```typescript
+// keystatic.config.ts
+import { config, singleton, fields } from '@keystatic/core';
+
+export default config({
+  // ...
+  singletons: {
+    settings: singleton({
+      label: 'Settings',
+      schema: {
+        siteName: fields.text({ label: 'Site name' }),
+        siteDescription: fields.text({ label: 'Site description', multiline: true }),
+      },
+    }),
+  },
+});
+```
+
+---
+
+## Options
+
+### `label`
+
+Defines the display name for the singleton. Used as the title in the Admin UI sidebar.
+
+### `schema`
+
+Defines the fields that the singleton should have. See the [Fields overview](/fields/overview) for all available field types.
+
+### `path`
+
+Specifies where to store the singleton data:
+
+```typescript
+path: 'custom/content/path/settings'
+```
+
+By default, Keystatic stores the singleton in a directory matching the singleton key. See [Content organisation](/concepts/content-organisation) for how the trailing slash affects file structure.
+
+### `format`
+
+Configures the output file format for the singleton. See [Format options](/concepts/format-options) for details on YAML, JSON, and Markdoc output.
+
+### `entryLayout`
+
+Changes the Admin UI layout for the singleton data entry. See [Entry layout](/concepts/entry-layout) for details.
+
+### `previewUrl`
+
+Configures a URL for [real-time previews](/recipes/real-time-previews) of the singleton.
+
+---
+
+## Type signature
+
+```typescript
+type Singleton<Schema> = {
+  label: string;
+  path?: string;
+  schema: Schema;
+  entryLayout?: 'content' | 'form';
+  format?: 'json' | 'yaml' | { data?: 'json' | 'yaml'; contentField?: string };
+  previewUrl?: string;
+};
+```
+
+<Tip>
+  Find the full, versioned `Singleton` type at [docsmill.dev](https://docsmill.dev/npm/@keystatic/core@latest#/.Singleton).
+</Tip>

@@ -1,0 +1,100 @@
+---
+title: "singleton()"
+description: "API reference for the singleton() function used to define single-entry Keystatic content."
+---
+
+The `singleton()` function defines a singleton: a single content entry with no slug, such as a site settings object, a navigation structure, or a homepage hero block.
+
+## Import
+
+```ts
+import { singleton } from '@keystatic/core';
+```
+
+## Usage
+
+```ts
+import { singleton, fields } from '@keystatic/core';
+
+const settings = singleton({
+  label: 'Site Settings',
+  path: 'content/settings',
+  schema: {
+    siteTitle: fields.text({ label: 'Site Title' }),
+    description: fields.text({ label: 'Description', multiline: true }),
+  },
+});
+```
+
+## Parameters
+
+<ParamField path="label" type="string" required>
+  The human-readable label shown in the Admin UI for this singleton.
+</ParamField>
+
+<ParamField path="schema" type="Record<string, ComponentSchema>" required>
+  An object mapping field keys to field definitions. Use the `fields` namespace to define each field.
+</ParamField>
+
+<ParamField path="path" type="string">
+  The path to the data file on disk, relative to the repository root, without a file extension. Keystatic appends the appropriate extension based on the `format` setting.
+
+  ```ts
+  path: 'content/settings'  // writes to content/settings.yaml
+  ```
+
+  Defaults to `{singletonKey}`.
+</ParamField>
+
+<ParamField path="format" type="'json' | 'yaml' | { data?: 'json' | 'yaml'; contentField?: string | string[] }">
+  Controls how data is serialized to disk. Same options as `collection()` format.
+
+  - `'yaml'` (default)
+  - `'json'`
+  - `{ data: 'yaml' | 'json', contentField: string }` — separates a content field into its own file
+</ParamField>
+
+<ParamField path="entryLayout" type="'content' | 'form'" default="'content'">
+  Controls the Admin UI editor layout.
+
+  - `'content'` — the content field is shown as the main editor area
+  - `'form'` — all fields are shown in a form layout
+</ParamField>
+
+<ParamField path="previewUrl" type="string">
+  A URL template for a preview link in the Admin UI. Supports a `{branch}` token.
+
+  ```ts
+  previewUrl: '/preview/start?branch={branch}&to=/'
+  ```
+</ParamField>
+
+## Return value
+
+<ResponseField name="singleton" type="Singleton<Schema>">
+  The typed singleton definition to pass to `config()`.
+</ResponseField>
+
+## Example
+
+```ts
+import { config, singleton, fields } from '@keystatic/core';
+
+export default config({
+  storage: { kind: 'local' },
+  singletons: {
+    navigation: singleton({
+      label: 'Navigation',
+      schema: {
+        links: fields.array(
+          fields.object({
+            label: fields.text({ label: 'Label' }),
+            href: fields.url({ label: 'URL' }),
+          }),
+          { label: 'Links', itemLabel: (props) => props.fields.label.value }
+        ),
+      },
+    }),
+  },
+});
+```

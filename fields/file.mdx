@@ -1,0 +1,80 @@
+---
+title: "File field"
+description: "Upload and store any file type with configurable storage directory and public path prefix."
+---
+
+The `file` field lets editors upload any file. The file is saved in your repository (in local or GitHub storage mode). It renders a file picker component in the Admin UI.
+
+## Usage
+
+```typescript
+import { fields } from '@keystatic/core'
+
+resume: fields.file({
+  label: 'Resume',
+  directory: 'public/files/resumes',
+  publicPath: '/files/resumes/',
+})
+```
+
+## Options
+
+<ParamField path="label" type="string" required>
+  The label displayed in the Admin UI for this field.
+</ParamField>
+
+<ParamField path="description" type="string">
+  Descriptive text shown below the label in the Admin UI.
+</ParamField>
+
+<ParamField path="directory" type="string">
+  The directory in your project tree where uploaded files are stored. Useful for placing files inside a `public` or `static` directory.
+</ParamField>
+
+<ParamField path="publicPath" type="string">
+  A prefix prepended to the stored filename to produce the final retrieval path, useful when serving files from a public directory.
+</ParamField>
+
+<ParamField path="validation" type="object">
+  Validation options for the field.
+
+  <Expandable title="validation properties">
+    <ParamField path="validation.isRequired" type="boolean">
+      When `true`, a file must be uploaded.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="transformFilename" type="(originalFilename: string) => string">
+  A function to transform the filename when the file field is used inside a `markdoc` or `mdx` field. Has no effect when used as a standalone schema field.
+</ParamField>
+
+## Return type
+
+When reading via the Reader API, returns `string | null` — the stored path (with `publicPath` prefix applied, if set). Returns `null` when no file has been uploaded. If `validation.isRequired` is `true`, returns `string`.
+
+## Example
+
+```typescript
+import { collection, fields } from '@keystatic/core'
+
+applicants: collection({
+  label: 'Applicants',
+  slugField: 'name',
+  schema: {
+    name: fields.slug({ name: { label: 'Name' } }),
+    resume: fields.file({
+      label: 'Resume',
+      description: 'PDF or Word document, max 5 MB.',
+      directory: 'public/files/resumes',
+      publicPath: '/files/resumes/',
+      validation: { isRequired: true },
+    }),
+    coverLetter: fields.file({
+      label: 'Cover letter',
+      directory: 'public/files/cover-letters',
+      publicPath: '/files/cover-letters/',
+    }),
+  },
+})
+```

@@ -1,0 +1,64 @@
+---
+title: "Entry layout"
+description: "The entryLayout option controls how a collection entry or singleton appears in the Keystatic Admin UI — stacked form fields or a content-focused writing mode."
+---
+
+Collections and singletons both support an `entryLayout` option. It controls how the entry appears in the Admin UI.
+
+| Value | Description |
+| --- | --- |
+| `'form'` (default) | All fields are stacked vertically in a standard form layout. |
+| `'content'` | A document/markdoc/mdx field is displayed front and center. All other fields move into a sidebar. |
+
+<Warning>
+  `entryLayout: 'content'` only takes effect when `format.contentField` references a `document`, `markdoc`, or `mdx` field. See [Format options](/concepts/format-options).
+</Warning>
+
+---
+
+## Example
+
+```typescript
+blog: collection({
+  label: 'Blog posts',
+  path: 'src/content/blog/**',
+  entryLayout: 'content',
+  format: {
+    contentField: 'body',
+  },
+  schema: {
+    title: fields.slug({ name: { label: 'Title' } }),
+    publishedDate: fields.date({ label: 'Published date' }),
+    body: fields.markdoc({ label: 'Body' }),
+  },
+})
+```
+
+With `entryLayout: 'content'`, the `body` field takes up the main editing area. All other fields — `title`, `publishedDate` — appear in a collapsible sidebar.
+
+Think of `entryLayout: 'content'` as a focused writing mode for long-form content.
+
+---
+
+## When to use each layout
+
+<CardGroup cols={2}>
+  <Card title="form" icon="list">
+    Best for structured data entries with many short fields — settings, metadata, product listings.
+  </Card>
+  <Card title="content" icon="pen-line">
+    Best for long-form writing — blog posts, documentation pages, landing page copy.
+  </Card>
+</CardGroup>
+
+---
+
+## Type signature
+
+```typescript
+type EntryLayout = 'content' | 'form';
+```
+
+<Tip>
+  Find the full, versioned `EntryLayout` type at [docsmill.dev](https://docsmill.dev/npm/@keystatic/core@latest#/.EntryLayout).
+</Tip>

@@ -1,0 +1,125 @@
+---
+title: "MDX field"
+description: "A WYSIWYG rich-text editor that reads and writes MDX (.mdx) files."
+---
+
+The `mdx` field provides a WYSIWYG editor that stores content as [MDX](https://mdxjs.com) (`.mdx` files by default). Keystatic handles reading and writing the MDX files via the Reader API; you are responsible for rendering the output.
+
+## Usage
+
+```typescript
+import { fields } from '@keystatic/core'
+
+content: fields.mdx({
+  label: 'Content',
+})
+```
+
+## Options
+
+<ParamField path="label" type="string" required>
+  The label displayed in the Admin UI for this field.
+</ParamField>
+
+<ParamField path="description" type="string">
+  Descriptive text shown below the label in the Admin UI.
+</ParamField>
+
+<ParamField path="extension" type="'mdx' | 'md'">
+  The file extension used for the content file. Use `'md'` if you need plain Markdown compatibility. Defaults to `'mdx'`.
+</ParamField>
+
+<ParamField path="options" type="MDXEditorOptions">
+  Editor formatting options. Controls which formatting features are available in the toolbar. See the [MDXEditorOptions type signature](https://docsmill.dev/npm/@keystatic/core@latest#/.fields.mdx.MDXEditorOptions) for the full list.
+</ParamField>
+
+<ParamField path="components" type="Record<string, ContentComponent>">
+  Custom content components that editors can insert into the rich-text content. See [Content components](/fields/content-components).
+</ParamField>
+
+## Inline variant
+
+Use `fields.mdx.inline(...)` to store content inline in the same YAML/JSON file instead of a separate `.mdx` file:
+
+```typescript
+summary: fields.mdx.inline({
+  label: 'Summary',
+})
+```
+
+This stores content as a YAML block scalar:
+
+```yaml
+summary: |
+  # Summary heading
+
+  Some content here.
+```
+
+## Image options
+
+Images embedded in the editor are stored similarly to the [`image`](/fields/image) field. Configure `options.image.directory` and `options.image.publicPath` to control where images are saved and how the path is constructed. See the [MDXEditorOptions type signature](https://docsmill.dev/npm/@keystatic/core@latest#/.fields.mdx.MDXEditorOptions) for details.
+
+## Return type
+
+When reading via the Reader API, `fields.mdx` returns a function `() => Promise<string>` — call it to get the raw MDX string. Pass the string to your MDX renderer (e.g. `next-mdx-remote`, `mdx-bundler`).
+
+## MDX limitations in Keystatic
+
+<Warning>
+  Keystatic statically analyses MDX content. The following patterns are not supported.
+</Warning>
+
+### No import statements
+
+Do not write `import` statements inside the MDX file. Instead, pass components to your MDX renderer:
+
+```tsx
+// In your rendering component:
+import { Card } from '../components/Card'
+
+<MdxRenderer components={{ Card }} />
+```
+
+### No HTML tags
+
+HTML tags inside MDX are not supported. Use Markdown equivalents:
+
+```diff
+- Learn more on the <a href="https://keystatic.com">Keystatic website</a>.
++ Learn more on the [Keystatic website](https://keystatic.com).
+```
+
+## Example
+
+```typescript
+import { collection, fields } from '@keystatic/core'
+import { wrapper } from '@keystatic/core/content-components'
+
+posts: collection({
+  label: 'Posts',
+  slugField: 'title',
+  format: { contentField: 'content' },
+  schema: {
+    title: fields.slug({ name: { label: 'Title' } }),
+    content: fields.mdx({
+      label: 'Content',
+      components: {
+        Callout: wrapper({
+          label: 'Callout',
+          schema: {
+            type: fields.select({
+              label: 'Type',
+              options: [
+                { label: 'Info', value: 'info' },
+                { label: 'Warning', value: 'warning' },
+              ],
+              defaultValue: 'info',
+            }),
+          },
+        }),
+      },
+    }),
+  },
+})
+```

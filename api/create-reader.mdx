@@ -1,0 +1,178 @@
+---
+title: "createReader (API reference)"
+description: "Complete API reference for createReader, the Reader interface, and TypeScript utility types."
+---
+
+`createReader` creates a `Reader` instance that reads content from a local directory on disk using Node.js `fs` APIs.
+
+## Import
+
+```ts
+import { createReader } from '@keystatic/core/reader';
+```
+
+## Function signature
+
+```ts
+function createReader<
+  Collections extends Record<string, Collection<Record<string, ComponentSchema>, string>>,
+  Singletons extends Record<string, Singleton<Record<string, ComponentSchema>>>,
+>(
+  repoPath: string,
+  config: Config<Collections, Singletons>
+): Reader<Collections, Singletons>
+```
+
+### Parameters
+
+<ParamField path="repoPath" type="string" required>
+  Absolute path to the root of the content repository. Pass `process.cwd()` when content is in the same project.
+</ParamField>
+
+<ParamField path="config" type="Config<Collections, Singletons>" required>
+  The Keystatic config object returned by `config()`.
+</ParamField>
+
+---
+
+## Reader interface
+
+### `reader.collections`
+
+A map of `CollectionReader` objects, keyed by collection name. TypeScript infers the shape from your config.
+
+### `reader.singletons`
+
+A map of `SingletonReader` objects, keyed by singleton name.
+
+### `reader.repoPath`
+
+```ts
+repoPath: string
+```
+
+The resolved path passed to `createReader`.
+
+### `reader.config`
+
+The original config object.
+
+---
+
+## CollectionReader\<Schema, SlugField\>
+
+Each `reader.collections.<name>` implements this interface.
+
+### `read(slug, opts?)`
+
+```ts
+read(
+  slug: string,
+  opts?: { resolveLinkedFiles?: boolean }
+): Promise<CollectionEntry | null>
+```
+
+Returns the entry data for `slug`, or `null` if not found. Content fields (`document`, `markdoc`, `mdx`) are returned as `() => Promise<Value>` unless `resolveLinkedFiles` is `true`.
+
+<ResponseField name="return" type="Promise<CollectionEntry | null>">
+  `null` when no entry with the given slug exists.
+</ResponseField>
+
+### `readOrThrow(slug, opts?)`
+
+```ts
+readOrThrow(
+  slug: string,
+  opts?: { resolveLinkedFiles?: boolean }
+): Promise<CollectionEntry>
+```
+
+Same as `read()` but throws `Error` with the message `Entry "<slug>" not found in collection "<name>"` when the entry does not exist.
+
+### `all(opts?)`
+
+```ts
+all(
+  opts?: { resolveLinkedFiles?: boolean }
+): Promise<Array<{ slug: string; entry: CollectionEntry }>>
+```
+
+Returns every entry in the collection as `{ slug, entry }` pairs. Entries that cannot be read are silently omitted.
+
+### `list()`
+
+```ts
+list(): Promise<string[]>
+```
+
+Returns an array of all valid slugs in the collection.
+
+---
+
+## SingletonReader\<Schema\>
+
+Each `reader.singletons.<name>` implements this interface.
+
+### `read(opts?)`
+
+```ts
+read(
+  opts?: { resolveLinkedFiles?: boolean }
+): Promise<SingletonEntry | null>
+```
+
+Returns the singleton data, or `null` if the singleton has not been written to disk yet.
+
+### `readOrThrow(opts?)`
+
+```ts
+readOrThrow(
+  opts?: { resolveLinkedFiles?: boolean }
+): Promise<SingletonEntry>
+```
+
+Throws `Error` with message `Singleton "<name>" not found` when data is missing.
+
+---
+
+## TypeScript utility types
+
+### `Entry<T>`
+
+```ts
+import { Entry } from '@keystatic/core/reader';
+```
+
+Derives the shape of a collection or singleton entry from the config type. Content fields are typed as `() => Promise<Value>` (lazy).
+
+```ts
+type Post = Entry<typeof keystaticConfig['collections']['posts']>;
+```
+
+### `EntryWithResolvedLinkedFiles<T>`
+
+```ts
+import { EntryWithResolvedLinkedFiles } from '@keystatic/core/reader';
+```
+
+Same as `Entry<T>` but content fields are typed as their resolved `Value` directly (for use when reading with `resolveLinkedFiles: true`).
+
+```ts
+type Post = EntryWithResolvedLinkedFiles<
+  typeof keystaticConfig['collections']['posts']
+>;
+```
+
+---
+
+## EntryReaderOpts
+
+```ts
+type EntryReaderOpts = {
+  resolveLinkedFiles?: boolean;
+};
+```
+
+<ParamField path="resolveLinkedFiles" type="boolean" default="false">
+  When `true`, content fields are eagerly resolved to their parsed value before the promise resolves. When `false`, content fields are async functions you call on demand.
+</ParamField>

@@ -1,0 +1,101 @@
+---
+title: "Relationship field"
+description: "Store a reference to the slug of an entry in another collection."
+---
+
+The `relationship` field stores the `slug` of an entry in another collection as a plain string. It renders a combobox in the Admin UI.
+
+To store multiple related entries, wrap the `relationship` field inside an [`array`](/fields/array) field.
+
+<Warning>
+  The `collection` value must match one of the keys in your `collections` config object exactly. If the referenced entry's slug changes after the relationship is saved, the stored value will not update automatically — the relationship will be broken.
+</Warning>
+
+## Usage
+
+<CodeGroup>
+
+```typescript Has-one relationship
+country: fields.relationship({
+  label: 'Country',
+  description: 'The country this person lives in.',
+  collection: 'countries',
+})
+```
+
+```typescript Has-many relationship (via array)
+authors: fields.array(
+  fields.relationship({
+    label: 'Author',
+    collection: 'authors',
+    validation: { isRequired: true },
+  }),
+  {
+    label: 'Authors',
+    itemLabel: props => props.value ?? 'Select an author',
+  }
+)
+```
+
+</CodeGroup>
+
+## Options
+
+<ParamField path="label" type="string" required>
+  The label displayed in the Admin UI for this field.
+</ParamField>
+
+<ParamField path="collection" type="string" required>
+  The key of the target collection as defined in your Keystatic config.
+</ParamField>
+
+<ParamField path="description" type="string">
+  Descriptive text shown below the label in the Admin UI.
+</ParamField>
+
+<ParamField path="validation" type="object">
+  Validation options for the field.
+
+  <Expandable title="validation properties">
+    <ParamField path="validation.isRequired" type="boolean">
+      When `true`, a collection entry must be selected.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Return type
+
+Returns `string | null` — the slug of the selected entry, or `null` if nothing is selected. If `validation.isRequired` is `true`, returns `string`.
+
+## Example
+
+```typescript
+import { collection, fields } from '@keystatic/core'
+
+posts: collection({
+  label: 'Posts',
+  slugField: 'title',
+  schema: {
+    title: fields.slug({ name: { label: 'Title' } }),
+    primaryAuthor: fields.relationship({
+      label: 'Primary author',
+      collection: 'authors',
+      validation: { isRequired: true },
+    }),
+    contributors: fields.array(
+      fields.relationship({
+        label: 'Contributor',
+        collection: 'authors',
+      }),
+      {
+        label: 'Contributors',
+        itemLabel: props => props.value ?? 'Select a contributor',
+      }
+    ),
+  },
+})
+```
+
+<Note>
+  The `relationship` field only stores a static string. Keystatic does not perform referential integrity checks. If you need to display linked content, look up the referenced entry separately using the Reader API.
+</Note>

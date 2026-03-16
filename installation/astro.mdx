@@ -1,0 +1,176 @@
+---
+title: "Astro"
+description: "Add Keystatic to an existing Astro project using the official @keystatic/astro integration."
+---
+
+<Info>
+This guide assumes you have an existing Astro project. If you don't have one yet, run `npm create astro@latest` to create one.
+</Info>
+
+## Installing dependencies
+
+First, add Astro's React and Markdoc integrations using the `astro add` command:
+
+```bash
+npx astro add react markdoc
+```
+
+Then install the Keystatic packages:
+
+<CodeGroup>
+
+```bash npm
+npm install @keystatic/core @keystatic/astro
+```
+
+```bash pnpm
+pnpm add @keystatic/core @keystatic/astro
+```
+
+```bash yarn
+yarn add @keystatic/core @keystatic/astro
+```
+
+</CodeGroup>
+
+## Setting up Keystatic
+
+<Steps>
+
+<Step title="Add the Keystatic integration to your Astro config">
+
+Import and add the `keystatic` integration to `astro.config.mjs`:
+
+```javascript astro.config.mjs
+import { defineConfig } from 'astro/config';
+import react from '@astrojs/react';
+import markdoc from '@astrojs/markdoc';
+import keystatic from '@keystatic/astro';
+
+export default defineConfig({
+  integrations: [react(), markdoc(), keystatic()],
+});
+```
+
+The `keystatic()` integration automatically injects the Admin UI route at `/keystatic/[...params]` and the API route at `/api/keystatic/[...params]`. No additional route files are needed.
+
+</Step>
+
+<Step title="Create the Keystatic config file">
+
+Create `keystatic.config.ts` in the root of your project:
+
+```typescript keystatic.config.ts
+import { config, fields, collection } from '@keystatic/core';
+
+export default config({
+  storage: {
+    kind: 'local',
+  },
+  collections: {
+    posts: collection({
+      label: 'Posts',
+      slugField: 'title',
+      path: 'src/content/posts/*',
+      format: { contentField: 'content' },
+      schema: {
+        title: fields.slug({ name: { label: 'Title' } }),
+        content: fields.markdoc({ label: 'Content' }),
+      },
+    }),
+  },
+});
+```
+
+</Step>
+
+<Step title="Start the dev server">
+
+```bash
+npm run dev
+```
+
+Visit `http://127.0.0.1:4321/keystatic` to see the Keystatic Admin UI.
+
+</Step>
+
+</Steps>
+
+<Warning>
+Keystatic requires server-side rendering. Your Astro project must be configured with `output: 'hybrid'` or `output: 'server'`. Static (`output: 'static'`) mode is not supported. If you are deploying, you will also need to add an [Astro SSR adapter](https://docs.astro.build/en/guides/server-side-rendering/#adding-an-adapter).
+</Warning>
+
+## How the integration works
+
+The `keystatic()` Astro integration registers two routes via Astro's `injectRoute` API:
+
+| Route | Purpose |
+|---|---|
+| `/keystatic/[...params]` | Serves the Keystatic Admin UI |
+| `/api/keystatic/[...params]` | Handles API requests from the Admin UI |
+
+Both routes are injected with `prerender: false` to ensure they are always server-rendered.
+
+The API handler is exported from `@keystatic/astro/api` and uses `makeHandler`, which reads GitHub credentials from Astro's `import.meta.env` (e.g. `KEYSTATIC_GITHUB_CLIENT_ID`, `KEYSTATIC_GITHUB_CLIENT_SECRET`, `KEYSTATIC_SECRET`) as well as from Cloudflare Workers runtime bindings when available.
+
+## Rendering content
+
+You can use Astro's built-in content collections to render Keystatic-managed content.
+
+### Displaying a collection list
+
+```astro src/pages/posts/index.astro
+---
+import { getCollection } from 'astro:content';
+
+const posts = await getCollection('posts');
+---
+<ul>
+  {posts.map(post => (
+    <li>
+      <a href={`/posts/${post.slug}`}>{post.data.title}</a>
+    </li>
+  ))}
+</ul>
+```
+
+### Displaying a single collection entry
+
+```astro src/pages/posts/my-first-post.astro
+---
+import { getEntry } from 'astro:content';
+
+const post = await getEntry('posts', 'my-first-post');
+const { Content } = await post.render();
+---
+
+<main>
+  <h1>{post.data.title}</h1>
+  <Content />
+</main>
+```
+
+<Tip>
+Alternatively, you can use Keystatic's Reader API (`createReader` from `@keystatic/core/reader`) for content fetching. This is a Node.js API and must only be called server-side.
+</Tip>
+
+## GitHub mode environment variables
+
+When connecting Keystatic to a GitHub repository, set the following variables. Astro reads these from `import.meta.env` automatically:
+
+```bash .env
+KEYSTATIC_GITHUB_CLIENT_ID=...
+KEYSTATIC_GITHUB_CLIENT_SECRET=...
+KEYSTATIC_SECRET=...
+PUBLIC_KEYSTATIC_GITHUB_APP_SLUG=...
+```
+
+Note that Astro uses the `PUBLIC_` prefix (not `NEXT_PUBLIC_`) to expose variables to the client.
+
+<Tip>
+See the [GitHub mode guide](/concepts/github-mode) to learn how to connect Keystatic to a GitHub repository for managing content on a deployed instance.
+</Tip>
+
+## Deployment
+
+Because Keystatic requires server-side Node.js APIs, you must add an [Astro adapter](https://docs.astro.build/en/guides/server-side-rendering/#adding-an-adapter) before deploying. You will also likely want to [connect Keystatic to GitHub](/concepts/github-mode) to manage content on the deployed instance.

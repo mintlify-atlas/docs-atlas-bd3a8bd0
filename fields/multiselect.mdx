@@ -1,0 +1,71 @@
+---
+title: "Multiselect field"
+description: "Choose zero, one, or multiple options from a predefined list, rendered as checkboxes in the Admin UI."
+---
+
+The `multiselect` field is similar to the [`select`](/fields/select) field but allows editors to choose zero, one, or many options simultaneously. In the Admin UI it renders a checkbox for each option.
+
+## Usage
+
+```typescript
+import { fields } from '@keystatic/core'
+
+interests: fields.multiselect({
+  label: 'Interests',
+  options: [
+    { label: 'Surfing', value: 'surfing' },
+    { label: 'Basketball', value: 'basketball' },
+    { label: 'Music', value: 'music' },
+    { label: 'Chess', value: 'chess' },
+  ],
+  defaultValue: ['surfing', 'basketball'],
+})
+```
+
+## Options
+
+<ParamField path="label" type="string" required>
+  The label displayed in the Admin UI for this field.
+</ParamField>
+
+<ParamField path="options" type="readonly { label: string; value: string }[]" required>
+  The list of options to display. Each option requires a `label` (shown in the UI) and a `value` (stored in data).
+</ParamField>
+
+<ParamField path="defaultValue" type="readonly string[]">
+  An array of option values that should be selected by default. Each entry must match the `value` of one of the provided options. Defaults to an empty array `[]`.
+</ParamField>
+
+<ParamField path="description" type="string">
+  Descriptive text shown below the label in the Admin UI.
+</ParamField>
+
+## Return type
+
+Returns a `readonly string[]` containing the values of the selected options. TypeScript infers the element type as a union of the provided option values.
+
+## Example
+
+```typescript
+import { collection, fields } from '@keystatic/core'
+
+posts: collection({
+  label: 'Posts',
+  slugField: 'title',
+  schema: {
+    title: fields.slug({ name: { label: 'Title' } }),
+    tags: fields.multiselect({
+      label: 'Tags',
+      description: 'Select all relevant topic tags for this post.',
+      options: [
+        { label: 'JavaScript', value: 'javascript' },
+        { label: 'TypeScript', value: 'typescript' },
+        { label: 'React', value: 'react' },
+        { label: 'CSS', value: 'css' },
+        { label: 'Performance', value: 'performance' },
+      ],
+      defaultValue: [],
+    }),
+  },
+})
+```

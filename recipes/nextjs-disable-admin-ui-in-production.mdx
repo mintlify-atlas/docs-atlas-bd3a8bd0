@@ -1,0 +1,88 @@
+---
+title: "Next.js: Disable Admin UI in Production"
+description: "Return 404 for /keystatic routes in production when deploying a Next.js project."
+---
+
+<Note>
+  This is a community contribution from [Funabab](https://github.com/funabab).
+</Note>
+
+When using the `local` storage strategy with Next.js, the Keystatic Admin UI is accessible at `/keystatic` even in production by default. Here is how to return a 404 for those routes when `NODE_ENV` is not `development`.
+
+---
+
+<Steps>
+
+### Export a condition from your Keystatic config
+
+In `keystatic.config.ts`, export a boolean that determines whether the Admin UI should be shown:
+
+```diff
+// keystatic.config.ts
+import { config, collection, fields } from '@keystatic/core';
+
++ export const showAdminUI = process.env.NODE_ENV === 'development';
+
+export default config({
+  storage: { kind: 'local' },
+  collections: {
+    posts: collection({
+      label: 'Posts',
+      slugField: 'title',
+      path: 'posts/*',
+      format: { contentField: 'content' },
+      schema: {
+        title: fields.slug({ name: { label: 'Title' } }),
+        content: fields.markdoc({ label: 'Content' }),
+      },
+    }),
+  },
+});
+```
+
+### Disable the Admin UI render
+
+In `app/keystatic/layout.tsx`, call `notFound()` when the Admin UI should not be shown:
+
+```diff
+// app/keystatic/layout.tsx
+import KeystaticApp from './keystatic';
++ import { showAdminUI } from '../../keystatic.config';
++ import { notFound } from 'next/navigation';
+
+export default function RootLayout() {
++  if (showAdminUI === false) {
++    notFound();
++  }
+  return <KeystaticApp />;
+}
+```
+
+### Disable the API routes (optional)
+
+Keystatic uses API routes to serve data to the Admin UI. Since the UI is disabled, you can also block those routes:
+
+```diff
+// api/keystatic/[...params]/route.ts
+import { makeRouteHandler } from '@keystatic/next/route-handler';
+- import keystaticConfig from '../../../../keystatic.config';
++ import keystaticConfig, { showAdminUI } from '../../../../keystatic.config';
+
+- export const { POST, GET } = makeRouteHandler({
+-   config: keystaticConfig,
+- });
+
++ export const { POST, GET } = (() => {
++   const notFoundHandler = () => new Response(null, { status: 404 });
++   if (showAdminUI === false) {
++     return { GET: notFoundHandler, POST: notFoundHandler };
++   }
++   return makeRouteHandler({ config: keystaticConfig });
++ })();
+```
+
+</Steps>
+
+<Note>
+  `NODE_ENV` is automatically set to `"production"` by Vercel and Netlify during deployment, so no additional environment variable configuration is required on those hosts.
+</Note>

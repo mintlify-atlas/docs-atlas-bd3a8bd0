@@ -1,0 +1,146 @@
+---
+title: "@keystatic/next"
+description: "API reference for the @keystatic/next package — route handlers for Next.js App Router and Pages Router."
+---
+
+The `@keystatic/next` package provides route handler factories that wire up the Keystatic backend API for both the **App Router** (`makeRouteHandler`) and the **Pages Router** (`makeAPIRouteHandler`).
+
+## Installation
+
+```bash
+npm install @keystatic/next
+```
+
+---
+
+## App Router: `makeRouteHandler`
+
+### Import
+
+```ts
+import { makeRouteHandler } from '@keystatic/next/route-handler';
+```
+
+### Function signature
+
+```ts
+function makeRouteHandler(config: APIRouteConfig): {
+  GET: (request: Request) => Promise<Response>;
+  POST: (request: Request) => Promise<Response>;
+}
+```
+
+### Parameters
+
+<ParamField path="config" type="APIRouteConfig" required>
+  <Expandable title="APIRouteConfig properties">
+    <ParamField path="config.config" type="Config" required>
+      Your Keystatic config object, imported from `keystatic.config.ts`.
+    </ParamField>
+
+    <ParamField path="config.clientId" type="string">
+      GitHub App Client ID. Defaults to the `KEYSTATIC_GITHUB_CLIENT_ID` environment variable.
+    </ParamField>
+
+    <ParamField path="config.clientSecret" type="string">
+      GitHub App Client Secret. Defaults to the `KEYSTATIC_GITHUB_CLIENT_SECRET` environment variable.
+    </ParamField>
+
+    <ParamField path="config.secret" type="string">
+      A random secret used to encrypt session tokens. Defaults to the `KEYSTATIC_SECRET` environment variable.
+    </ParamField>
+
+    <ParamField path="config.localBaseDirectory" type="string">
+      Override the base directory used for local storage operations. Defaults to `process.cwd()`.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Return value
+
+<ResponseField name="GET" type="(request: Request) => Promise<Response>">
+  Next.js App Router GET handler. Export this from your route file.
+</ResponseField>
+
+<ResponseField name="POST" type="(request: Request) => Promise<Response>">
+  Next.js App Router POST handler. Export this from your route file.
+</ResponseField>
+
+### Usage
+
+Create the file `app/api/keystatic/[...params]/route.ts`:
+
+```ts
+// app/api/keystatic/[...params]/route.ts
+import { makeRouteHandler } from '@keystatic/next/route-handler';
+import keystaticConfig from '../../../../keystatic.config';
+
+export const { GET, POST } = makeRouteHandler({
+  config: keystaticConfig,
+});
+```
+
+<Note>
+  The catch-all segment `[...params]` is required. Keystatic uses multiple sub-paths under `/api/keystatic/`.
+</Note>
+
+---
+
+## Pages Router: `makeAPIRouteHandler`
+
+### Import
+
+```ts
+import { makeAPIRouteHandler } from '@keystatic/next/api';
+```
+
+### Function signature
+
+```ts
+function makeAPIRouteHandler(
+  config: APIRouteConfig
+): (req: NextApiRequest, res: NextApiResponse) => Promise<void>
+```
+
+### Parameters
+
+Accepts the same `APIRouteConfig` object as `makeRouteHandler`.
+
+### Return value
+
+<ResponseField name="handler" type="(req: NextApiRequest, res: NextApiResponse) => Promise<void>">
+  A standard Next.js Pages Router API handler.
+</ResponseField>
+
+### Usage
+
+Create the file `pages/api/keystatic/[...params].ts`:
+
+```ts
+// pages/api/keystatic/[...params].ts
+import { makeAPIRouteHandler } from '@keystatic/next/api';
+import keystaticConfig from '../../../keystatic.config';
+
+export default makeAPIRouteHandler({
+  config: keystaticConfig,
+});
+```
+
+---
+
+## Environment variables
+
+The following environment variables are read automatically if the corresponding `APIRouteConfig` properties are not set explicitly:
+
+| Variable | Used for |
+| --- | --- |
+| `KEYSTATIC_GITHUB_CLIENT_ID` | GitHub OAuth App client ID |
+| `KEYSTATIC_GITHUB_CLIENT_SECRET` | GitHub OAuth App client secret |
+| `KEYSTATIC_SECRET` | Session encryption secret |
+| `NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG` | GitHub App slug for the Admin UI |
+
+---
+
+## Disabling in production
+
+See the [Next.js: Disable Admin UI in Production](/recipes/nextjs-disable-admin-ui-in-production) recipe for a pattern to return 404 for all Keystatic routes when `NODE_ENV !== 'development'`.

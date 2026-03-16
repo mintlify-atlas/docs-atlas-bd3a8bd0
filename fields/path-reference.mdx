@@ -1,0 +1,76 @@
+---
+title: "Path reference field"
+description: "Reference an existing file in the repository by its path, with optional glob pattern filtering."
+---
+
+The `pathReference` field stores a path to an existing file in the repository. It renders a combobox in the Admin UI that lets editors browse and select files.
+
+Use the `pattern` option to restrict which files can be selected by providing a glob pattern.
+
+## Usage
+
+```typescript
+import { fields } from '@keystatic/core'
+
+videoFile: fields.pathReference({
+  label: 'Video file',
+  description: 'A reference to a video file in the public folder.',
+  pattern: 'public/videos/**/*',
+})
+```
+
+## Options
+
+<ParamField path="label" type="string" required>
+  The label displayed in the Admin UI for this field.
+</ParamField>
+
+<ParamField path="description" type="string">
+  Descriptive text shown below the label in the Admin UI.
+</ParamField>
+
+<ParamField path="pattern" type="string">
+  A glob pattern that filters which files are selectable. For example, `'public/**/*'` restricts selection to files inside the `public` directory.
+</ParamField>
+
+<ParamField path="validation" type="object">
+  Validation options for the field.
+
+  <Expandable title="validation properties">
+    <ParamField path="validation.isRequired" type="boolean">
+      When `true`, a file path must be selected.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Return type
+
+Returns `string | null` — the path of the selected file relative to the repository root, or `null` if nothing is selected. If `validation.isRequired` is `true`, returns `string`.
+
+## Example
+
+```typescript
+import { collection, fields } from '@keystatic/core'
+
+downloads: collection({
+  label: 'Downloads',
+  slugField: 'title',
+  schema: {
+    title: fields.slug({ name: { label: 'Title' } }),
+    pdfFile: fields.pathReference({
+      label: 'PDF file',
+      description: 'Select a PDF from the public/downloads directory.',
+      pattern: 'public/downloads/**/*.pdf',
+      validation: { isRequired: true },
+    }),
+    previewImage: fields.pathReference({
+      label: 'Preview image',
+      pattern: 'public/images/**/*.{png,jpg,jpeg,webp}',
+    }),
+  },
+})
+```
+
+<Note>
+  Unlike the [`image`](/fields/image) or [`file`](/fields/file) fields, `pathReference` does not handle file uploads. It simply references a file that already exists in the repository.
+</Note>

@@ -1,0 +1,120 @@
+---
+title: "User interface"
+description: "Customise the Keystatic Admin UI — set a brand name and logo, and reorganise the navigation sidebar to suit your editors."
+---
+
+The `ui` option in your Keystatic config lets you customise parts of the Admin UI. Tailoring the interface to match your project helps editors feel at home.
+
+The Admin UI is available at the `/keystatic` route of your application.
+
+---
+
+## Brand
+
+By default, Keystatic shows a generic brand name based on the storage mode. Override it by providing a `brand` object:
+
+```typescript
+// keystatic.config.ts
+import { config } from '@keystatic/core'
+
+export default config({
+  // ...
+  ui: {
+    brand: { name: 'Your brand' },
+  },
+})
+```
+
+### Custom logo mark
+
+Provide a `mark` property with a React component to render a custom logo. The component receives a `colorScheme` prop (`'light'` or `'dark'`) so you can adapt to the user's preference:
+
+```tsx
+// keystatic.config.tsx
+import { config } from '@keystatic/core'
+
+export default config({
+  // ...
+  ui: {
+    brand: {
+      name: 'Your brand',
+      mark: ({ colorScheme }) => {
+        const path = colorScheme === 'dark'
+          ? '//your-brand.com/path/to/dark-logo.png'
+          : '//your-brand.com/path/to/light-logo.png';
+
+        return <img src={path} height={24} />;
+      },
+    },
+  },
+})
+```
+
+<Tip>
+  Keep the logo mark at a maximum height of `24px` so it fits well within the UI. When using inline SVGs, use `"currentColor"` for `fill` and `stroke` values to inherit the foreground colour.
+</Tip>
+
+---
+
+## Navigation
+
+By default, Keystatic organises the sidebar into two groups: **Collections** and **Singletons**. Override this with a custom `navigation` configuration.
+
+### Grouped navigation
+
+Pass an object where each key is a group name and the value is an array of collection or singleton keys:
+
+```typescript
+// keystatic.config.ts
+export default config({
+  // ...
+  ui: {
+    navigation: {
+      'Content': ['pages', 'posts'],
+      'Settings': ['site', 'seo'],
+    },
+  },
+})
+```
+
+### Flat navigation with separators
+
+Pass an array of collection and singleton keys for a flat list. Use the special `'---'` value to insert a divider between items:
+
+```typescript
+// keystatic.config.ts
+export default config({
+  // ...
+  ui: {
+    navigation: [
+      'pages',
+      'posts',
+      '---',
+      'site',
+      'seo',
+    ],
+  },
+})
+```
+
+<Note>
+  The **Dashboard** item is always pinned as the first item in the navigation list, regardless of configuration.
+</Note>
+
+---
+
+## Type signature
+
+```typescript
+type UserInterface = {
+  brand?: {
+    mark?: (props: { colorScheme: 'light' | 'dark' }) => ReactElement;
+    name: string;
+  };
+  navigation?: string[] | { [section: string]: string[] };
+};
+```
+
+<Tip>
+  Find the full, versioned `UserInterface` type at [docsmill.dev](https://docsmill.dev/npm/@keystatic/core@latest#/.UserInterface).
+</Tip>

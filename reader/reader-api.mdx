@@ -1,0 +1,237 @@
+---
+title: "createReader"
+description: "Read Keystatic content from a local directory using the createReader function."
+---
+
+`createReader` creates a reader that reads content from a local directory on disk. It uses Node.js `fs` APIs and must only be called on the server.
+
+## Import
+
+```ts
+import { createReader } from '@keystatic/core/reader';
+```
+
+## Function signature
+
+```ts
+function createReader<Collections, Singletons>(
+  repoPath: string,
+  config: Config<Collections, Singletons>
+): Reader<Collections, Singletons>
+```
+
+### Parameters
+
+<ParamField path="repoPath" type="string" required>
+  Absolute path to the root of the content repository on disk. Typically `process.cwd()` when the content lives in the same project.
+</ParamField>
+
+<ParamField path="config" type="Config" required>
+  Your Keystatic config object, imported from `keystatic.config.ts`. Provides the collection and singleton schemas used to parse content files.
+</ParamField>
+
+### Return value
+
+Returns a `Reader` object with two namespaces: `collections` and `singletons`. The reader also exposes a `repoPath` string and the original `config`.
+
+---
+
+## Collection methods
+
+For each collection defined in your config, `reader.collections.<name>` exposes the following methods.
+
+### `.list()`
+
+Returns an array of slugs for all entries in the collection.
+
+```ts
+list(): Promise<string[]>
+```
+
+**Example:**
+
+```ts
+const slugs = await reader.collections.posts.list();
+// ['my-first-post', 'hello-world']
+```
+
+### `.read(slug, opts?)`
+
+Returns the data for a single collection entry, or `null` if no entry with that slug exists.
+
+```ts
+read(
+  slug: string,
+  opts?: { resolveLinkedFiles?: boolean }
+): Promise<Entry | null>
+```
+
+<ParamField path="slug" type="string" required>
+  The slug of the entry to read.
+</ParamField>
+
+<ParamField path="opts.resolveLinkedFiles" type="boolean" default="false">
+  When `true`, content fields (e.g. `document`, `markdoc`, `mdx`) are eagerly resolved to their parsed value. When `false` (default), content fields are returned as `() => Promise<Value>` functions that you call on demand.
+</ParamField>
+
+**Example:**
+
+```ts
+const post = await reader.collections.posts.read('my-first-post');
+if (post) {
+  // content is a lazy async function by default
+  const content = await post.content();
+}
+
+// Or resolve immediately
+const post = await reader.collections.posts.read('my-first-post', {
+  resolveLinkedFiles: true,
+});
+// post.content is already the parsed document
+```
+
+### `.readOrThrow(slug, opts?)`
+
+Same as `.read()` but throws an error if the entry is not found instead of returning `null`.
+
+```ts
+readOrThrow(
+  slug: string,
+  opts?: { resolveLinkedFiles?: boolean }
+): Promise<Entry>
+```
+
+### `.all(opts?)`
+
+Returns an array of `{ slug, entry }` objects for every entry in the collection.
+
+```ts
+all(
+  opts?: { resolveLinkedFiles?: boolean }
+): Promise<Array<{ slug: string; entry: Entry }>>
+```
+
+**Example:**
+
+```ts
+const posts = await reader.collections.posts.all();
+for (const { slug, entry } of posts) {
+  console.log(slug, entry.title);
+}
+```
+
+---
+
+## Singleton methods
+
+For each singleton defined in your config, `reader.singletons.<name>` exposes the following methods.
+
+### `.read(opts?)`
+
+Returns the singleton data, or `null` if it has not been written yet.
+
+```ts
+read(
+  opts?: { resolveLinkedFiles?: boolean }
+): Promise<SingletonEntry | null>
+```
+
+**Example:**
+
+```ts
+const nav = await reader.singletons.navigation.read();
+```
+
+### `.readOrThrow(opts?)`
+
+Same as `.read()` but throws if the singleton data is missing.
+
+```ts
+readOrThrow(
+  opts?: { resolveLinkedFiles?: boolean }
+): Promise<SingletonEntry>
+```
+
+---
+
+## Lazy vs. eager content fields
+
+Fields backed by separate content files (such as `document`, `mdx`, and `markdoc`) are **lazy by default**: the reader returns an async function instead of the value directly.
+
+```ts
+const post = await reader.collections.posts.read(slug);
+
+// Lazy — call the function to get the content
+const content = await post.content();
+
+// Eager — resolveLinkedFiles resolves all content fields upfront
+const postEager = await reader.collections.posts.read(slug, {
+  resolveLinkedFiles: true,
+});
+const content = postEager.content; // already resolved
+```
+
+---
+
+## TypeScript types
+
+### `Entry<T>`
+
+Derive the shape of a collection or singleton entry from your config:
+
+```ts
+import { Entry } from '@keystatic/core/reader';
+import keystaticConfig from './keystatic.config';
+
+type Post = Entry<typeof keystaticConfig['collections']['posts']>;
+
+function PostCard(props: Post) {
+  return <h2>{props.title}</h2>;
+}
+```
+
+### `EntryWithResolvedLinkedFiles<T>`
+
+Use this variant when you read with `resolveLinkedFiles: true` — content fields are already resolved to their value rather than an async function:
+
+```ts
+import { EntryWithResolvedLinkedFiles } from '@keystatic/core/reader';
+import keystaticConfig from './keystatic.config';
+
+type Post = EntryWithResolvedLinkedFiles<
+  typeof keystaticConfig['collections']['posts']
+>;
+```
+
+---
+
+## Full example — Next.js App Router
+
+```ts
+// app/blog/[slug]/page.tsx
+import { createReader } from '@keystatic/core/reader';
+import keystaticConfig from '../../../keystatic.config';
+
+const reader = createReader(process.cwd(), keystaticConfig);
+
+export async function generateStaticParams() {
+  const slugs = await reader.collections.posts.list();
+  return slugs.map(slug => ({ slug }));
+}
+
+export default async function BlogPost({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const post = await reader.collections.posts.readOrThrow(params.slug, {
+    resolveLinkedFiles: true,
+  });
+
+  return (
+    <article>
+      <h1>{post.title}</h1>
+    </article>
+  );
+}
+```

@@ -1,0 +1,95 @@
+---
+title: "Use Astro's Image component with the Keystatic image field"
+description: "Configure Keystatic's image field to work with Astro's built-in Image component and astro:assets optimizations."
+---
+
+Astro provides a [built-in `<Image />` component](https://docs.astro.build/en/guides/images/#image--astroassets) that generates optimized versions of local images. This guide walks through the configuration needed to use it together with Keystatic's `image` field.
+
+## The assets directory in Astro
+
+To use Astro's `<Image />` component, images must be stored inside the `src/assets` directory. Keystatic's `image` field has a `directory` option that controls where uploaded images are saved.
+
+<Tip>
+  Add a TypeScript path alias for `src/assets` in your `tsconfig.json`. This simplifies the `publicPath` values you need to write:
+
+  ```json
+  // tsconfig.json
+  {
+    "compilerOptions": {
+      "baseUrl": ".",
+      "paths": {
+        "@assets/*": ["./src/assets/*"]
+      }
+    }
+  }
+  ```
+</Tip>
+
+---
+
+## Standalone image field
+
+Images stored in a standalone `fields.image()` field (not inside a document field) appear as frontmatter values in Astro's content collections.
+
+<Warning>
+  You must configure the Zod content collection schema in Astro and use the `image()` helper for the image metadata transformation to work. See [Astro's docs on images in content collections](https://docs.astro.build/en/guides/images/#images-in-content-collections).
+</Warning>
+
+Using the path alias above, configure the image field like this:
+
+```ts
+image: fields.image({
+  label: 'Image',
+  directory: 'src/assets/images/posts',
+  publicPath: '@assets/images/posts/',
+})
+```
+
+As long as `publicPath` points inside `src/assets`, Astro can process the path into image metadata that the `<Image />` component accepts.
+
+---
+
+## Images inside MDX or Markdoc fields
+
+Images uploaded via `fields.mdx()` or `fields.markdoc()` can be configured the same way via the `options.image` object:
+
+```ts
+content: fields.mdx({
+  label: 'Content',
+  options: {
+    image: {
+      directory: 'src/assets/images/posts',
+      publicPath: '@assets/images/posts/',
+    },
+  },
+})
+```
+
+You still need to configure the Zod schema with Astro's `image()` helper for the metadata transformation to work.
+
+---
+
+## Content component images
+
+Using Astro assets inside [content components](/fields/content-components) requires a dynamic import, because the image is embedded inside the document body rather than frontmatter.
+
+<Warning>
+  For content component images, the `publicPath` must start with `/src/assets` (not the `@assets` alias) for Astro's dynamic import to resolve correctly.
+</Warning>
+
+```ts
+// Inside a MDX or Markdoc field's component blocks:
+captionImage: block({
+  label: 'Caption Image',
+  schema: {
+    image: fields.image({
+      label: 'Image',
+      directory: 'src/assets/images/posts',
+      // Must start with /src/assets for dynamic imports
+      publicPath: '/src/assets/images/posts/',
+    }),
+  },
+})
+```
+
+See the [Astro guide on dynamically importing images](https://docs.astro.build/en/recipes/dynamically-importing-images/) for the rendering implementation.

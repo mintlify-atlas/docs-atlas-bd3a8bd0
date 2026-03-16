@@ -1,0 +1,73 @@
+---
+title: "Datetime field"
+description: "Store a local datetime string collected from a datetime-local input, with optional min, max, and required validation."
+---
+
+The `datetime` field stores a datetime string collected from an `<input type="datetime-local" />` form field. It renders a datetime picker in the Admin UI.
+
+## Usage
+
+```typescript
+import { fields } from '@keystatic/core'
+
+scheduledAt: fields.datetime({
+  label: 'Scheduled date and time',
+  description: 'The date and time this post should go live.',
+})
+```
+
+## Options
+
+<ParamField path="label" type="string" required>
+  The label displayed in the Admin UI for this field.
+</ParamField>
+
+<ParamField path="description" type="string">
+  Descriptive text shown below the label in the Admin UI.
+</ParamField>
+
+<ParamField path="defaultValue" type="string | { kind: 'now' }">
+  The default value for the field. Accepts a datetime string compatible with `datetime-local`, or `{ kind: 'now' }` to default to the current local time. Defaults to `null`.
+</ParamField>
+
+<ParamField path="validation" type="object">
+  Validation options for the field.
+
+  <Expandable title="validation properties">
+    <ParamField path="validation.isRequired" type="boolean">
+      When `true`, the field must have a value.
+    </ParamField>
+    <ParamField path="validation.min" type="string">
+      The earliest datetime allowed.
+    </ParamField>
+    <ParamField path="validation.max" type="string">
+      The latest datetime allowed.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Return type
+
+Returns `string | null`. Returns `null` when empty. If `validation.isRequired` is `true`, returns `string`.
+
+## Example
+
+```typescript
+import { collection, fields } from '@keystatic/core'
+
+webinars: collection({
+  label: 'Webinars',
+  slugField: 'title',
+  schema: {
+    title: fields.slug({ name: { label: 'Title' } }),
+    startsAt: fields.datetime({
+      label: 'Start time',
+      description: 'The date and time the webinar begins.',
+      validation: { isRequired: true },
+    }),
+    endsAt: fields.datetime({
+      label: 'End time',
+    }),
+  },
+})
+```

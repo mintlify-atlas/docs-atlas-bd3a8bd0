@@ -1,0 +1,95 @@
+---
+title: "Reader API Overview"
+description: "Read Keystatic content at build time or server-side using the Reader API — no admin UI required."
+---
+
+The **Reader API** is a server-side Node.js API that lets you read Keystatic content from any storage backend — a local directory or a remote GitHub repository. It is completely independent of the Admin UI and is designed for use at build time or in server-rendered pages.
+
+<Warning>
+  The Reader API runs on the **server only**. It uses Node.js APIs and cannot be imported in browser code.
+</Warning>
+
+## When to use the Reader API
+
+| Scenario | Reader type |
+| --- | --- |
+| Local development, SSG, or monorepo builds | `createReader` (local) |
+| Production SSR reading from GitHub without cloning | `createGitHubReader` |
+| Next.js draft-mode real-time previews | `createGitHubReader` |
+
+Good places to call the Reader API:
+
+- `getStaticProps` / `generateStaticParams` in **Next.js**
+- Frontmatter sections in **Astro** `.astro` files
+- `loader()` in **Remix**
+- React **Server Components**
+
+## The two reader types
+
+<CardGroup cols={2}>
+  <Card title="Local Reader" icon="folder" href="/reader/reader-api">
+    `createReader` reads content from a local directory on disk using Node.js `fs` APIs. Ideal for build-time static site generation.
+  </Card>
+  <Card title="GitHub Reader" icon="github" href="/reader/github-reader">
+    `createGitHubReader` reads content directly from the GitHub API without needing to clone the repository. Ideal for server-side rendering in production.
+  </Card>
+</CardGroup>
+
+## Quick start
+
+### Local reader
+
+```ts
+import { createReader } from '@keystatic/core/reader';
+import keystaticConfig from './keystatic.config';
+
+const reader = createReader(process.cwd(), keystaticConfig);
+
+// List all post slugs
+const slugs = await reader.collections.posts.list();
+
+// Read a single post
+const post = await reader.collections.posts.read('my-post-slug');
+
+// Read all posts at once
+const posts = await reader.collections.posts.all();
+
+// Read a singleton
+const settings = await reader.singletons.settings.read();
+```
+
+### GitHub reader
+
+```ts
+import { createGitHubReader } from '@keystatic/core/reader/github';
+import keystaticConfig from './keystatic.config';
+
+const reader = createGitHubReader(keystaticConfig, {
+  repo: 'my-org/my-repo',
+  token: process.env.GITHUB_TOKEN,
+});
+
+const posts = await reader.collections.posts.all();
+```
+
+## TypeScript support
+
+The Reader API exports `Entry` and `EntryWithResolvedLinkedFiles` utility types for use in component props:
+
+```ts
+import { Entry } from '@keystatic/core/reader';
+import keystaticConfig from './keystatic.config';
+
+type PostProps = Entry<typeof keystaticConfig['collections']['posts']>;
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Reader API reference" href="/reader/reader-api">
+    Full docs for `createReader`, all collection and singleton methods, and TypeScript types.
+  </Card>
+  <Card title="GitHub Reader reference" href="/reader/github-reader">
+    Full docs for `createGitHubReader` and its GitHub-specific options.
+  </Card>
+</CardGroup>

@@ -1,0 +1,67 @@
+---
+title: "Astro: Disable Admin UI in Production"
+description: "Prevent access to /keystatic routes in production when deploying with Astro."
+---
+
+<Note>
+  This is a community contribution from [Florian Lefebvre](https://florian-lefebvre.dev).
+</Note>
+
+When using the `local` storage strategy, the Keystatic Admin UI is mounted at `/keystatic` by default. In a production deployment you typically do not want these routes to be accessible or indexed. Here is how to disable them using an environment variable.
+
+---
+
+<Steps>
+
+### Conditionally mount the Keystatic integration
+
+In your `astro.config.mjs`, wrap the `keystatic()` integration in a condition that checks for a `SKIP_KEYSTATIC` environment variable:
+
+```diff
+// astro.config.mjs
+import { defineConfig } from 'astro/config';
+import react from '@astrojs/react';
+import markdoc from '@astrojs/markdoc';
+import keystatic from '@keystatic/astro';
+
+export default defineConfig({
+-  integrations: [react(), markdoc(), keystatic()],
++  integrations: [
++    react(),
++    markdoc(),
++    ...(process.env.SKIP_KEYSTATIC ? [] : [keystatic()]),
++  ],
+});
+```
+
+When `SKIP_KEYSTATIC` is set to any truthy value, the integration — and all its injected routes — will not be mounted. When it is absent or falsy, the Admin UI is available as normal.
+
+### Set the environment variable on your host
+
+<Tabs>
+  <Tab title="Vercel">
+    1. Open your project in the Vercel dashboard.
+    2. Go to **Settings → Environment Variables**.
+    3. Add a new variable: **Key** = `SKIP_KEYSTATIC`, **Value** = `true`.
+    4. Click **Save**.
+
+    See [Vercel's environment variable docs](https://vercel.com/docs/projects/environment-variables) for more detail.
+  </Tab>
+  <Tab title="Netlify">
+    1. Open your site in the Netlify dashboard.
+    2. Go to **Site → Site configuration → Environment variables**.
+    3. Click **Add a variable → Add a single variable**.
+    4. Set **Key** = `SKIP_KEYSTATIC`, **Value** = `true`.
+    5. Click **Save variable**.
+
+    See [Netlify's environment variable docs](https://docs.netlify.com/environment-variables/get-started/#site-environment-variables) for more detail.
+  </Tab>
+</Tabs>
+
+### Re-deploy
+
+Trigger a new deployment after adding the environment variable. The `/keystatic` routes will no longer be included in the build, so they won't be accessible, indexed, or added to sitemaps.
+
+You can still run the Keystatic Admin UI locally without the variable set.
+
+</Steps>

@@ -1,0 +1,222 @@
+---
+title: "Remix"
+description: "Add Keystatic to an existing Remix v2 project."
+---
+
+<Info>
+This guide assumes you have an existing Remix project. If you don't have one yet, run `npx create-remix@latest` to create one.
+</Info>
+
+## Installing dependencies
+
+Install `@keystatic/core`, `@keystatic/remix`, and `@markdoc/markdoc`:
+
+<CodeGroup>
+
+```bash npm
+npm install @keystatic/core @keystatic/remix @markdoc/markdoc
+```
+
+```bash pnpm
+pnpm add @keystatic/core @keystatic/remix @markdoc/markdoc
+```
+
+```bash yarn
+yarn add @keystatic/core @keystatic/remix @markdoc/markdoc
+```
+
+</CodeGroup>
+
+## Setting up Keystatic
+
+<Steps>
+
+<Step title="Create the Keystatic config file">
+
+Create `keystatic.config.ts` in the root of your project:
+
+```typescript keystatic.config.ts
+import { config, fields, collection } from '@keystatic/core';
+
+export default config({
+  storage: {
+    kind: 'local',
+  },
+  collections: {
+    posts: collection({
+      label: 'Posts',
+      slugField: 'title',
+      path: 'app/content/posts/*',
+      format: { contentField: 'content' },
+      schema: {
+        title: fields.slug({ name: { label: 'Title' } }),
+        content: fields.markdoc({ label: 'Content' }),
+      },
+    }),
+  },
+});
+```
+
+</Step>
+
+<Step title="Add the Admin UI route">
+
+Create `app/routes/keystatic.$.tsx` to serve the Keystatic Admin UI:
+
+```typescript app/routes/keystatic.$.tsx
+import { makePage } from '@keystatic/remix/ui';
+import config from '../../keystatic.config';
+
+export default makePage(config);
+```
+
+`makePage` returns a React component that renders the full Keystatic Admin UI. Remix's splat route (`$`) ensures all `/keystatic/*` paths are handled by this file.
+
+</Step>
+
+<Step title="Add the API route">
+
+Create `app/routes/api.keystatic.$.tsx` to handle API requests from the Admin UI:
+
+```typescript app/routes/api.keystatic.$.tsx
+import type { ActionFunction, LoaderFunction } from '@remix-run/node';
+import { handleLoader } from '@keystatic/remix/api';
+import config from '../../keystatic.config';
+
+export const loader: LoaderFunction = args => handleLoader({ config }, args);
+export const action: ActionFunction = args => handleLoader({ config }, args);
+```
+
+Both `loader` and `action` are delegated to `handleLoader`, which processes all `GET` and non-`GET` requests respectively.
+
+</Step>
+
+<Step title="Configure server dependencies">
+
+Because Keystatic only ships an ESM build, you must configure your bundler to include it in the server bundle.
+
+<Tabs>
+  <Tab title="Remix (traditional)">
+
+Add `serverDependenciesToBundle` in `remix.config.js`:
+
+```javascript remix.config.js
+/** @type {import('@remix-run/dev').AppConfig} */
+export default {
+  ignoredRouteFiles: ['**/.*'],
+  serverDependenciesToBundle: [/^@keystatic\//, 'minimatch'],
+};
+```
+
+  </Tab>
+  <Tab title="Remix + Vite">
+
+Add `ssr.noExternal` in `vite.config.js`:
+
+```javascript vite.config.js
+export default defineConfig({
+  plugins: [remix()],
+  ssr: {
+    noExternal: [/^@keystatic\//, 'minimatch'],
+  },
+});
+```
+
+  </Tab>
+</Tabs>
+
+</Step>
+
+<Step title="Start the dev server">
+
+```bash
+npm run dev
+```
+
+Visit `http://localhost/keystatic` or `http://127.0.0.1/keystatic` to see the Keystatic Admin UI.
+
+</Step>
+
+</Steps>
+
+## Rendering content
+
+Keystatic's Reader API lets you load content server-side inside Remix loaders.
+
+### Displaying a collection list
+
+```tsx app/routes/posts._index.tsx
+import { createReader } from '@keystatic/core/reader';
+import { Link, useLoaderData } from '@remix-run/react';
+import { json } from '@remix-run/node';
+import keystaticConfig from '../../keystatic.config';
+
+export async function loader() {
+  const reader = createReader(process.cwd(), keystaticConfig);
+  const posts = await reader.collections.posts.all();
+  return json({ posts });
+}
+
+export default function Page() {
+  const { posts } = useLoaderData<typeof loader>();
+
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.slug}>
+          <Link to={`/posts/${post.slug}`}>{post.entry.title}</Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+### Displaying a single collection entry
+
+```tsx app/routes/posts.$slug.tsx
+import React from 'react';
+import Markdoc from '@markdoc/markdoc';
+import { createReader } from '@keystatic/core/reader';
+import { type LoaderFunctionArgs, json } from '@remix-run/node';
+import { useLoaderData } from '@remix-run/react';
+import keystaticConfig from '../../keystatic.config';
+
+export async function loader({ params }: LoaderFunctionArgs) {
+  const reader = createReader(process.cwd(), keystaticConfig);
+  const slug = params.slug;
+  if (!slug) throw json('Not Found', { status: 404 });
+  const post = await reader.collections.posts.read(
+    slug,
+    { resolveLinkedFiles: true }
+  );
+  if (!post) throw json('Not Found', { status: 404 });
+  const errors = Markdoc.validate(post.content.node);
+  if (errors.length) {
+    console.error(errors);
+    throw new Error('Invalid content');
+  }
+  const content = Markdoc.transform(post.content.node);
+  return json({
+    post: { title: post.title, content },
+  });
+}
+
+export default function Post() {
+  const { post } = useLoaderData<typeof loader>();
+  return (
+    <>
+      <h1>{post.title}</h1>
+      {Markdoc.renderers.react(post.content, React)}
+    </>
+  );
+}
+```
+
+<Note>
+`resolveLinkedFiles: true` causes the reader to resolve the Markdoc AST inline, returning the `node` directly on the entry rather than an async `content()` function. This is the recommended approach for Remix loaders since the AST must be serialized through the `json` response.
+</Note>
+
+## Deployment
+
+Keystatic requires a server-side Node.js runtime. Ensure your Remix deployment target supports Node.js (e.g. Node adapter, Vercel, Fly.io). You will also likely want to [connect Keystatic to GitHub](/concepts/github-mode) to manage content on the deployed instance.

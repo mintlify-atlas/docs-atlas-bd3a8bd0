@@ -1,0 +1,114 @@
+---
+title: "Blocks field"
+description: "Create a repeating list where each item can be a different schema type, like a page builder."
+---
+
+The `blocks` field is similar to the [`array`](/fields/array) field in that it lets editors add multiple items, but each item can be a different field type. Think of it as a mini page builder.
+
+Each block is defined with a `label` and a `schema`. The first block in the definition is the default selection.
+
+## Usage
+
+```typescript
+import { fields } from '@keystatic/core'
+
+links: fields.blocks(
+  {
+    page: {
+      label: 'Internal page',
+      schema: fields.relationship({
+        label: 'Page',
+        collection: 'pages',
+      }),
+    },
+    url: {
+      label: 'External URL',
+      schema: fields.text({ label: 'URL' }),
+    },
+  },
+  { label: 'Links' }
+)
+```
+
+## Arguments
+
+<ParamField path="blocks" type="Record<string, { label: string; schema: ComponentSchema; itemLabel?: (props) => string }>" required>
+  An object where each key names a block type. Each value must have:
+  - `label` — displayed in the "add" menu
+  - `schema` — any Keystatic field describing the block's data
+  - `itemLabel` (optional) — a function returning the display label for a list item
+
+  At least one block type is required.
+</ParamField>
+
+<ParamField path="opts" type="object" required>
+  Options for the blocks field.
+
+  <Expandable title="opts properties">
+    <ParamField path="opts.label" type="string" required>
+      The label for the whole blocks field.
+    </ParamField>
+    <ParamField path="opts.description" type="string">
+      Descriptive text shown below the label.
+    </ParamField>
+    <ParamField path="opts.validation.length.min" type="number">
+      Minimum number of blocks required.
+    </ParamField>
+    <ParamField path="opts.validation.length.max" type="number">
+      Maximum number of blocks allowed.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Return type
+
+Returns a `readonly` array of discriminated union objects. Each item has a `discriminant` property (the block key) and a `value` property (the block's schema read value):
+
+```typescript
+readonly (
+  | { discriminant: 'page'; value: string | null }
+  | { discriminant: 'url';  value: string }
+)[]
+```
+
+## Example
+
+```typescript
+import { collection, fields } from '@keystatic/core'
+
+pages: collection({
+  label: 'Pages',
+  slugField: 'title',
+  schema: {
+    title: fields.slug({ name: { label: 'Title' } }),
+    sections: fields.blocks(
+      {
+        hero: {
+          label: 'Hero section',
+          schema: fields.object({
+            heading: fields.text({ label: 'Heading' }),
+            subheading: fields.text({ label: 'Subheading', multiline: true }),
+            image: fields.image({
+              label: 'Background image',
+              directory: 'public/images/heroes',
+              publicPath: '/images/heroes/',
+            }),
+          }),
+        },
+        richText: {
+          label: 'Rich text',
+          schema: fields.markdoc({ label: 'Content' }),
+        },
+        cta: {
+          label: 'Call to action',
+          schema: fields.object({
+            text: fields.text({ label: 'Button text' }),
+            href: fields.url({ label: 'Button URL' }),
+          }),
+        },
+      },
+      { label: 'Page sections' }
+    ),
+  },
+})
+```

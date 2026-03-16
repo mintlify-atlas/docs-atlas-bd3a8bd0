@@ -1,0 +1,124 @@
+---
+title: "Slug field"
+description: "Pair a display name with an auto-generated URL-friendly slug for use as a collection entry identifier."
+---
+
+The `slug` field stores a text string (such as a post title or an author name) alongside an auto-generated URL-friendly slug. Editors see two inputs in the Admin UI: one for the display name and one for the slug, which can be manually overridden.
+
+This field is used in conjunction with the `slugField` option on a collection to make the slug serve as the file/folder name for each entry.
+
+## Usage
+
+```typescript
+import { fields } from '@keystatic/core'
+
+title: fields.slug({
+  name: {
+    label: 'Title',
+    description: 'The title of the post.',
+  },
+  // Optional slug field customisation
+  slug: {
+    label: 'SEO-friendly slug',
+    description: 'This will define the file/folder name for this entry.',
+  },
+})
+```
+
+## Options
+
+<ParamField path="name" type="object" required>
+  Configuration for the display name text input.
+
+  <Expandable title="name properties">
+    <ParamField path="name.label" type="string" required>
+      The label for the name input.
+    </ParamField>
+    <ParamField path="name.description" type="string">
+      Descriptive text shown below the name input.
+    </ParamField>
+    <ParamField path="name.defaultValue" type="string">
+      The default value for the name input.
+    </ParamField>
+    <ParamField path="name.validation" type="object">
+      Validation for the name field.
+      <Expandable title="name.validation properties">
+        <ParamField path="name.validation.isRequired" type="boolean">
+          When `true`, the name must not be empty.
+        </ParamField>
+        <ParamField path="name.validation.length.min" type="number">
+          Minimum number of characters for the name.
+        </ParamField>
+        <ParamField path="name.validation.length.max" type="number">
+          Maximum number of characters for the name.
+        </ParamField>
+        <ParamField path="name.validation.pattern.regex" type="RegExp">
+          A regular expression the name must match.
+        </ParamField>
+        <ParamField path="name.validation.pattern.message" type="string">
+          Custom error message when the pattern does not match.
+        </ParamField>
+      </Expandable>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="slug" type="object">
+  Optional configuration for the slug input.
+
+  <Expandable title="slug properties">
+    <ParamField path="slug.label" type="string">
+      The label for the slug input. Defaults to `'Slug'`.
+    </ParamField>
+    <ParamField path="slug.description" type="string">
+      Descriptive text shown below the slug input.
+    </ParamField>
+    <ParamField path="slug.generate" type="(name: string) => string">
+      A custom function to generate the slug from the name. Defaults to a standard slugify function.
+    </ParamField>
+    <ParamField path="slug.validation.length.min" type="number">
+      Minimum length for the slug. Defaults to `1`.
+    </ParamField>
+    <ParamField path="slug.validation.length.max" type="number">
+      Maximum length for the slug.
+    </ParamField>
+    <ParamField path="slug.validation.pattern.regex" type="RegExp">
+      A regular expression the slug must match.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Return type
+
+Returns `{ name: string; slug: string }` when reading as a regular schema field. When used as the `slugField` on a collection, the Reader API returns only the `name` string (the slug becomes the entry key).
+
+## Example
+
+```typescript
+import { collection, config, fields } from '@keystatic/core'
+
+export default config({
+  collections: {
+    posts: collection({
+      label: 'Posts',
+      slugField: 'title',
+      schema: {
+        title: fields.slug({
+          name: {
+            label: 'Title',
+            validation: { isRequired: true },
+          },
+          slug: {
+            label: 'URL slug',
+            description: 'The URL path segment for this post.',
+          },
+        }),
+      },
+    }),
+  },
+})
+```
+
+<Note>
+  The `slug` field can also be used inside an [`array`](/fields/array) field with the `slugField` option. This replaces numeric indexes in file paths for nested documents or images.
+</Note>

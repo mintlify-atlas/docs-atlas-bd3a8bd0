@@ -1,0 +1,82 @@
+---
+title: "Date field"
+description: "Store an ISO 8601 date string (YYYY-MM-DD) with optional min, max, and required validation."
+---
+
+The `date` field stores an [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) formatted date string in the form `YYYY-MM-DD`. It renders a date picker in the Admin UI.
+
+## Usage
+
+```typescript
+import { fields } from '@keystatic/core'
+
+publishedAt: fields.date({
+  label: 'Published date',
+  description: 'The date this post was published.',
+})
+```
+
+## Options
+
+<ParamField path="label" type="string" required>
+  The label displayed in the Admin UI for this field.
+</ParamField>
+
+<ParamField path="description" type="string">
+  Descriptive text shown below the label in the Admin UI.
+</ParamField>
+
+<ParamField path="defaultValue" type="string | { kind: 'today' }">
+  The default value for the field. Accepts a date string in `YYYY-MM-DD` format, or `{ kind: 'today' }` to default to the current date. Defaults to `null`.
+</ParamField>
+
+<ParamField path="validation" type="object">
+  Validation options for the field.
+
+  <Expandable title="validation properties">
+    <ParamField path="validation.isRequired" type="boolean">
+      When `true`, the field must have a value.
+    </ParamField>
+    <ParamField path="validation.min" type="string">
+      The earliest date allowed, as a `YYYY-MM-DD` string.
+    </ParamField>
+    <ParamField path="validation.max" type="string">
+      The latest date allowed, as a `YYYY-MM-DD` string.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Return type
+
+Returns `string | null`. The string is in `YYYY-MM-DD` format. Returns `null` when empty. If `validation.isRequired` is `true`, returns `string`.
+
+## Example
+
+```typescript
+import { collection, fields } from '@keystatic/core'
+
+events: collection({
+  label: 'Events',
+  slugField: 'title',
+  schema: {
+    title: fields.slug({ name: { label: 'Title' } }),
+    eventDate: fields.date({
+      label: 'Event date',
+      description: 'The date the event takes place.',
+      validation: {
+        isRequired: true,
+      },
+    }),
+    registrationDeadline: fields.date({
+      label: 'Registration deadline',
+      validation: {
+        max: '2099-12-31',
+      },
+    }),
+  },
+})
+```
+
+<Note>
+  Dates are stored as ISO 8601 strings (`YYYY-MM-DD`), not JavaScript `Date` objects. Convert them when needed in your front end: `new Date(post.eventDate)`.
+</Note>

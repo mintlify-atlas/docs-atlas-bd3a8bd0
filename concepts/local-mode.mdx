@@ -1,0 +1,57 @@
+---
+title: "Local mode"
+description: "Store Keystatic content directly on your local file system using storage kind: 'local'."
+---
+
+Most projects start with Keystatic in `local` storage mode. Content is read and written directly to your local file system — the simplest way to get started.
+
+```typescript
+// keystatic.config.ts
+export default config({
+  storage: {
+    kind: 'local',
+  },
+})
+```
+
+<Note>
+  New projects created with the [Keystatic CLI](/quickstart) run in `local` mode by default.
+</Note>
+
+---
+
+## How it works
+
+In local mode, every change you make in the Admin UI is written directly to files in your project directory. The files are committed to version control like any other source file — there is no external service or database involved.
+
+This makes local mode ideal for:
+
+- Starting a new project
+- Solo developers who own the repository
+- Previewing content changes locally before publishing
+
+---
+
+## Switching to GitHub mode
+
+When you're ready to collaborate with others or edit content on a deployed site, switch to `github` mode by updating the `storage` option:
+
+```typescript
+// keystatic.config.ts
+export default config({
+  storage: {
+    kind: 'github',
+    repo: 'your-org/your-repo',
+  },
+})
+```
+
+See the [GitHub mode](/concepts/github-mode) page for the full setup walkthrough.
+
+---
+
+## Limitations
+
+<Warning>
+  Local mode only works when running Keystatic on your own machine. It is not suitable for deployed environments — use `github` or `cloud` mode for production.
+</Warning>

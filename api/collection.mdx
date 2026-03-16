@@ -1,0 +1,111 @@
+---
+title: "collection()"
+description: "API reference for the collection() function used to define Keystatic content collections."
+---
+
+The `collection()` function defines a content collection: a set of entries that each have a unique slug and share the same schema.
+
+## Import
+
+```ts
+import { collection } from '@keystatic/core';
+```
+
+## Usage
+
+```ts
+import { collection, fields } from '@keystatic/core';
+
+const posts = collection({
+  label: 'Posts',
+  slugField: 'title',
+  path: 'content/posts/*',
+  schema: {
+    title: fields.slug({ name: { label: 'Title' } }),
+    content: fields.markdoc({ label: 'Content' }),
+  },
+});
+```
+
+## Parameters
+
+<ParamField path="label" type="string" required>
+  The human-readable label shown in the Admin UI for this collection.
+</ParamField>
+
+<ParamField path="slugField" type="string" required>
+  The key of the field within `schema` that acts as the entry's slug. The referenced field must be a `fields.slug()` or another `SlugFormField`.
+</ParamField>
+
+<ParamField path="schema" type="Record<string, ComponentSchema>" required>
+  An object mapping field keys to field definitions. Use the `fields` namespace to define each field.
+
+  ```ts
+  schema: {
+    title: fields.slug({ name: { label: 'Title' } }),
+    publishedAt: fields.date({ label: 'Published At' }),
+    content: fields.markdoc({ label: 'Content' }),
+  }
+  ```
+</ParamField>
+
+<ParamField path="path" type="string">
+  The glob pattern that determines where entry files are stored on disk, relative to the repository root. Must contain `*` (single level) or `**` (any depth) as the slug placeholder.
+
+  ```ts
+  path: 'content/posts/*'      // entries at content/posts/{slug}/index.yaml
+  path: 'content/posts/**'     // entries nested at any depth
+  path: 'src/data/posts/*'     // custom directory
+  ```
+
+  Defaults to `{collectionKey}/*`.
+</ParamField>
+
+<ParamField path="format" type="'json' | 'yaml' | { data?: 'json' | 'yaml'; contentField?: string | string[] }">
+  Controls how entry data is serialized to disk.
+
+  - `'yaml'` (default) — frontmatter stored as YAML
+  - `'json'` — frontmatter stored as JSON
+  - `{ data: 'yaml' | 'json', contentField: string }` — separates the content field into its own file (e.g. `.mdoc` or `.mdx`)
+
+  ```ts
+  format: { contentField: 'content' }  // writes content to a separate file
+  ```
+</ParamField>
+
+<ParamField path="entryLayout" type="'content' | 'form'" default="'content'">
+  Controls the layout of the entry editor in the Admin UI.
+
+  - `'content'` — the content field is shown as the main editor area
+  - `'form'` — all fields are shown in a traditional form layout
+</ParamField>
+
+<ParamField path="columns" type="string[]">
+  The field keys to display as columns in the collection list view in the Admin UI. Only fields that serialize to a primitive value (`string`, `number`, `boolean`, `Date`, or `null`) can be used as columns.
+</ParamField>
+
+<ParamField path="previewUrl" type="string">
+  A URL template used to generate a preview link in the Admin UI. Supports `{branch}` and `{slug}` tokens.
+
+  ```ts
+  previewUrl: '/preview/start?branch={branch}&to=/posts/{slug}'
+  ```
+</ParamField>
+
+<ParamField path="template" type="string">
+  The slug of another collection entry to use as the default content when creating a new entry.
+</ParamField>
+
+<ParamField path="parseSlugForSort" type="(slug: string) => string | number">
+  A function that extracts a sortable value from a slug. Useful when slugs contain a date prefix.
+
+  ```ts
+  parseSlugForSort: (slug) => slug.slice(0, 10) // extract YYYY-MM-DD
+  ```
+</ParamField>
+
+## Return value
+
+<ResponseField name="collection" type="Collection<Schema, SlugField>">
+  The typed collection definition to pass to `config()`. TypeScript enforces that `slugField` refers to a valid slug field within `schema`.
+</ResponseField>

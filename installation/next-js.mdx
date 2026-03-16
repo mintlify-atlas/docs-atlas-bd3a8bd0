@@ -1,0 +1,245 @@
+---
+title: "Next.js"
+description: "Add Keystatic to an existing Next.js project using the App Router or Pages Router."
+---
+
+<Info>
+This guide assumes you have an existing Next.js 14+ project. If you don't have one yet, run `npx create-next-app@latest` to create one.
+</Info>
+
+## Installing dependencies
+
+Install `@keystatic/core`, `@keystatic/next`, and `@markdoc/markdoc`:
+
+<CodeGroup>
+
+```bash npm
+npm install @keystatic/core @keystatic/next @markdoc/markdoc
+```
+
+```bash pnpm
+pnpm add @keystatic/core @keystatic/next @markdoc/markdoc
+```
+
+```bash yarn
+yarn add @keystatic/core @keystatic/next @markdoc/markdoc
+```
+
+</CodeGroup>
+
+## Setting up Keystatic
+
+<Steps>
+
+<Step title="Create the Keystatic config file">
+
+Create `keystatic.config.ts` in the root of your project. This file defines your content schema and storage strategy.
+
+```typescript keystatic.config.ts
+import { config, fields, collection } from '@keystatic/core';
+
+export default config({
+  storage: {
+    kind: 'local',
+  },
+  collections: {
+    posts: collection({
+      label: 'Posts',
+      slugField: 'title',
+      path: 'src/content/posts/*',
+      format: { contentField: 'content' },
+      schema: {
+        title: fields.slug({ name: { label: 'Title' } }),
+        content: fields.markdoc({ label: 'Content' }),
+      },
+    }),
+  },
+});
+```
+
+</Step>
+
+<Step title="Create the API route handler">
+
+<Tabs>
+  <Tab title="App Router">
+
+Create `src/app/api/keystatic/[...params]/route.ts`:
+
+```typescript src/app/api/keystatic/[...params]/route.ts
+import { makeRouteHandler } from '@keystatic/next/route-handler';
+import config from '../../../../../keystatic.config';
+
+export const { POST, GET } = makeRouteHandler({
+  config,
+});
+```
+
+`makeRouteHandler` returns `GET` and `POST` handlers that you export directly from the route file.
+
+  </Tab>
+  <Tab title="Pages Router">
+
+Create `src/pages/api/keystatic/[[...params]].ts`:
+
+```typescript src/pages/api/keystatic/[[...params]].ts
+import { makeAPIRouteHandler } from '@keystatic/next/api';
+import config from '../../../../keystatic.config';
+
+export default makeAPIRouteHandler({ config });
+```
+
+  </Tab>
+</Tabs>
+
+</Step>
+
+<Step title="Add the Keystatic app page">
+
+<Tabs>
+  <Tab title="App Router">
+
+First, create `src/app/keystatic/keystatic.ts` — this is the client component that renders the Admin UI:
+
+```typescript src/app/keystatic/keystatic.ts
+"use client";
+
+import { makePage } from "@keystatic/next/ui/app";
+import config from "../../../keystatic.config";
+
+export default makePage(config);
+```
+
+Next, create the layout file `src/app/keystatic/layout.tsx`:
+
+```tsx src/app/keystatic/layout.tsx
+import KeystaticApp from "./keystatic";
+
+export default function Layout() {
+  return (
+    <KeystaticApp />
+  );
+}
+```
+
+Finally, create the catch-all page `src/app/keystatic/[[...params]]/page.tsx`:
+
+```tsx src/app/keystatic/[[...params]]/page.tsx
+export default function Page() {
+  return null;
+}
+```
+
+  </Tab>
+  <Tab title="Pages Router">
+
+Create `src/pages/keystatic/[[...params]].tsx`:
+
+```tsx src/pages/keystatic/[[...params]].tsx
+import { makePage } from '@keystatic/next/ui/pages';
+import config from '../../keystatic.config';
+
+export default makePage(config);
+```
+
+  </Tab>
+</Tabs>
+
+</Step>
+
+<Step title="Start the dev server">
+
+```bash
+npm run dev
+```
+
+Visit `http://127.0.0.1:3000/keystatic` to see the Keystatic Admin UI.
+
+</Step>
+
+</Steps>
+
+## Rendering content
+
+Keystatic provides a Reader API to fetch content server-side.
+
+### Displaying a collection list
+
+```tsx src/app/posts/page.tsx
+import { createReader } from '@keystatic/core/reader';
+import keystaticConfig from '../../../keystatic.config';
+import Link from 'next/link';
+
+const reader = createReader(process.cwd(), keystaticConfig);
+
+export default async function Page() {
+  const posts = await reader.collections.posts.all();
+  return (
+    <ul>
+      {posts.map(post => (
+        <li key={post.slug}>
+          <Link href={`/posts/${post.slug}`}>{post.entry.title}</Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+### Displaying a single collection entry
+
+```tsx src/app/posts/[slug]/page.tsx
+import { createReader } from "@keystatic/core/reader";
+import React from "react";
+import Markdoc from "@markdoc/markdoc";
+import keystaticConfig from "../../../../keystatic.config";
+
+const reader = createReader(process.cwd(), keystaticConfig);
+
+export default async function Post({ params }: { params: { slug: string } }) {
+  const post = await reader.collections.posts.read(params.slug);
+  if (!post) {
+    return <div>No Post Found</div>;
+  }
+  const { node } = await post.content();
+  const errors = Markdoc.validate(node);
+  if (errors.length) {
+    console.error(errors);
+    throw new Error('Invalid content');
+  }
+  const renderable = Markdoc.transform(node);
+  return (
+    <>
+      <h1>{post.title}</h1>
+      {Markdoc.renderers.react(renderable, React)}
+      <hr />
+      <a href={`/posts`}>Back to Posts</a>
+    </>
+  );
+}
+```
+
+<Note>
+The Reader API is a Node.js API and must be called server-side. In the App Router this means Server Components or Route Handlers only.
+</Note>
+
+## GitHub mode environment variables
+
+When connecting Keystatic to a GitHub repository, set the following environment variables:
+
+```bash .env.local
+KEYSTATIC_GITHUB_CLIENT_ID=...
+KEYSTATIC_GITHUB_CLIENT_SECRET=...
+KEYSTATIC_SECRET=...
+NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG=...
+```
+
+The `NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG` variable is read automatically by `@keystatic/next` — it uses the `NEXT_PUBLIC_` prefix so it is available on the client side.
+
+<Tip>
+See the [GitHub mode guide](/concepts/github-mode) to learn how to connect Keystatic to a GitHub repository for managing content on a deployed instance.
+</Tip>
+
+## Deployment
+
+Keystatic requires server-side Node.js execution via Next.js API routes. Ensure your hosting provider supports Node.js. You will likely also want to [connect Keystatic to GitHub](/concepts/github-mode) to manage content on the deployed instance.

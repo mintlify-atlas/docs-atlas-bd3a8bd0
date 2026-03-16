@@ -1,0 +1,122 @@
+---
+title: "Collections"
+description: "Define repeatable content structures in Keystatic — blog posts, recipes, testimonials, and more — using the collection() function."
+---
+
+A `collection` represents anything you'd want multiple instances of: a series of blog posts, cooking recipes, or testimonials from happy customers.
+
+Collections are defined within the `collections` key of the Keystatic `config`. Each collection has its own key and is wrapped in a `collection()` function.
+
+## Example
+
+Here's how to define a `testimonials` collection where each entry has an `author` and a `quote`:
+
+```typescript
+// keystatic.config.ts
+import { config, collection, fields } from '@keystatic/core';
+
+export default config({
+  // ...
+  collections: {
+    testimonials: collection({
+      label: 'Testimonials',
+      slugField: 'author',
+      schema: {
+        author: fields.slug({ name: { label: 'Author' } }),
+        quote: fields.text({ label: 'Quote', multiline: true }),
+      },
+    }),
+  },
+});
+```
+
+---
+
+## Options
+
+### `label`
+
+Defines the display name for the collection. Used as the title in the Admin UI sidebar and list view.
+
+### `slugField`
+
+Specifies which field in the `schema` is used as the slug for each entry. It is recommended to use this with the [`fields.slug`](/fields/slug) type, which lets editors customise and regenerate the slug in the Admin UI:
+
+```typescript
+testimonials: collection({
+  label: 'Testimonials',
+  slugField: 'title',
+  schema: {
+    title: fields.slug({ name: { label: 'Title' } }),
+  },
+}),
+```
+
+### `schema`
+
+Defines the fields that each entry in the collection should have. See the [Fields overview](/fields/overview) for all available field types.
+
+### `path`
+
+Specifies where to store entries for this collection:
+
+```typescript
+path: 'custom/content/path/testimonials/*'
+```
+
+By default, Keystatic stores entries in a directory matching the collection key at the root of your project. See [Content organisation](/concepts/content-organisation) for how the trailing slash affects file structure, and [Path wildcard](/concepts/path-wildcard) for advanced patterns.
+
+### `format`
+
+Configures the output file format for collection entries. See [Format options](/concepts/format-options) for details on YAML, JSON, and Markdoc output.
+
+### `entryLayout`
+
+Changes the Admin UI layout for a collection entry. See [Entry layout](/concepts/entry-layout) for details.
+
+### `columns`
+
+Shows additional fields in the collection list view. By default, only the slug of each entry is displayed. Pass an array of field keys to include more columns:
+
+```typescript
+columns: ['title', 'publishedOn']
+```
+
+### `parseSlugForSort`
+
+A function that transforms a slug into a value used for sorting the collection list view:
+
+```typescript
+parseSlugForSort: (slug) => slug.replace(/^\d{4}-/, '')
+```
+
+### `previewUrl`
+
+Configures a URL for [real-time previews](/recipes/real-time-previews) of content entries.
+
+### `template`
+
+The path to an existing collection entry to use as the starting point for new entries.
+
+---
+
+## Type signature
+
+```typescript
+type Collection<Schema, SlugField> = {
+  label: string;
+  path?: `${string}/${Glob}` | `${string}/${Glob}/${string}`;
+  slugField: SlugField;
+  schema: Schema;
+  entryLayout?: 'content' | 'form';
+  format?: 'json' | 'yaml' | { data?: 'json' | 'yaml'; contentField?: string };
+  previewUrl?: string;
+  columns?: string[];
+  template?: string;
+  parseSlugForSort?: (slug: string) => string | number;
+};
+```
+
+<Tip>
+  Find the full, versioned `Collection` type at [docsmill.dev](https://docsmill.dev/npm/@keystatic/core@latest#/.Collection).
+</Tip>

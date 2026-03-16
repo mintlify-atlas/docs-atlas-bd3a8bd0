@@ -1,0 +1,127 @@
+---
+title: "Conditional field"
+description: "Display different fields based on the value of a checkbox or select discriminant."
+---
+
+The `conditional` field displays different fields based on the current value of a `checkbox` or `select` discriminant field. It is useful for optional field groups or for content that can have multiple layouts.
+
+The first argument is the discriminant field (`checkbox` or `select`). The second argument is an object mapping each possible discriminant value to the field schema to display for that value.
+
+## Usage
+
+<CodeGroup>
+
+```typescript Checkbox discriminant
+seo: fields.conditional(
+  fields.checkbox({ label: 'Define custom SEO tags', defaultValue: false }),
+  {
+    true: fields.object({
+      title: fields.text({ label: 'SEO title' }),
+      description: fields.text({ label: 'SEO description', multiline: true }),
+    }),
+    false: fields.empty(),
+  }
+)
+```
+
+```typescript Select discriminant
+featuredMedia: fields.conditional(
+  fields.select({
+    label: 'Featured media',
+    options: [
+      { label: 'No media', value: 'none' },
+      { label: 'Image', value: 'image' },
+      { label: 'Video', value: 'video' },
+    ],
+    defaultValue: 'none',
+  }),
+  {
+    none: fields.empty(),
+    image: fields.object({
+      asset: fields.image({
+        label: 'Image',
+        directory: 'public/images',
+        publicPath: '/images/',
+        validation: { isRequired: true },
+      }),
+      alt: fields.text({ label: 'Alt text' }),
+    }),
+    video: fields.object({
+      url: fields.text({
+        label: 'YouTube URL',
+        validation: { length: { min: 1 } },
+      }),
+    }),
+  }
+)
+```
+
+</CodeGroup>
+
+## Arguments
+
+<ParamField path="discriminant" type="BasicFormField<string> | BasicFormField<boolean>" required>
+  A `checkbox` or `select` field whose value determines which branch to display.
+</ParamField>
+
+<ParamField path="values" type="Record<string, ComponentSchema>" required>
+  An object mapping each possible discriminant value to a field schema.
+
+  - For a `checkbox` discriminant: keys must be `'true'` and `'false'`.
+  - For a `select` discriminant: keys must match each option `value`.
+
+  Use `fields.empty()` for branches where no additional fields are required.
+</ParamField>
+
+## Return type
+
+Returns a discriminated union:
+
+```typescript
+| { discriminant: true;  value: <true branch type>  }
+| { discriminant: false; value: <false branch type> }
+```
+
+or, for a `select` discriminant:
+
+```typescript
+| { discriminant: 'none';  value: <none branch type>  }
+| { discriminant: 'image'; value: <image branch type> }
+| { discriminant: 'video'; value: <video branch type> }
+```
+
+## Example
+
+```typescript
+import { collection, fields } from '@keystatic/core'
+
+posts: collection({
+  label: 'Posts',
+  slugField: 'title',
+  schema: {
+    title: fields.slug({ name: { label: 'Title' } }),
+    callToAction: fields.conditional(
+      fields.select({
+        label: 'Call to action type',
+        options: [
+          { label: 'None', value: 'none' },
+          { label: 'Button', value: 'button' },
+          { label: 'Newsletter signup', value: 'newsletter' },
+        ],
+        defaultValue: 'none',
+      }),
+      {
+        none: fields.empty(),
+        button: fields.object({
+          text: fields.text({ label: 'Button text' }),
+          href: fields.url({ label: 'Button URL' }),
+        }),
+        newsletter: fields.object({
+          headline: fields.text({ label: 'Headline' }),
+          subtext: fields.text({ label: 'Subtext', multiline: true }),
+        }),
+      }
+    ),
+  },
+})
+```

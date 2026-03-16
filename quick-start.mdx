@@ -1,0 +1,152 @@
+---
+title: "Quick start"
+description: "The fastest way to get started with Keystatic. Scaffold a new project with the create-keystatic CLI."
+---
+
+The quickest way to get started is to run the Keystatic CLI. It scaffolds a new project — Next.js, Astro, or Remix — already integrated with Keystatic.
+
+## Create a new project
+
+<Steps>
+  <Step title="Run the CLI">
+    Run the `create @keystatic` command with your preferred package manager:
+
+    <CodeGroup>
+      ```bash npm
+      npm create @keystatic@latest
+      ```
+
+      ```bash pnpm
+      pnpm create @keystatic@latest
+      ```
+
+      ```bash yarn
+      yarn create @keystatic
+      ```
+    </CodeGroup>
+
+    The CLI will prompt you to choose a framework (Next.js, Astro, or Remix) and a project name, then download the appropriate template.
+  </Step>
+
+  <Step title="Install dependencies">
+    Change into the new project directory and install dependencies:
+
+    <CodeGroup>
+      ```bash npm
+      npm install
+      ```
+
+      ```bash pnpm
+      pnpm install
+      ```
+
+      ```bash yarn
+      yarn install
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Start the development server">
+    <CodeGroup>
+      ```bash npm
+      npm run dev
+      ```
+
+      ```bash pnpm
+      pnpm dev
+      ```
+
+      ```bash yarn
+      yarn dev
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Open the admin UI">
+    Navigate to [http://localhost:3000/keystatic](http://localhost:3000/keystatic) in your browser.
+
+    You'll see the Keystatic admin UI, ready for you to create and edit content.
+  </Step>
+</Steps>
+
+## What the scaffolded project includes
+
+The CLI template sets up:
+
+- A `keystatic.config.ts` file at the root of your project with an example collection
+- An API route that Keystatic uses to read and write content
+- A page that mounts the admin UI at `/keystatic`
+- Example content files so you can see how data is stored
+
+### Example config
+
+The generated `keystatic.config.ts` will look similar to this:
+
+```ts keystatic.config.ts
+import { config, collection, fields } from '@keystatic/core'
+
+export default config({
+  storage: {
+    kind: 'local',
+  },
+  collections: {
+    posts: collection({
+      label: 'Posts',
+      slugField: 'title',
+      path: 'src/content/posts/*',
+      format: { contentField: 'content' },
+      schema: {
+        title: fields.slug({ name: { label: 'Title' } }),
+        content: fields.markdoc({
+          label: 'Content',
+        }),
+      },
+    }),
+  },
+})
+```
+
+This config defines a `posts` collection. Each post has a `title` (used as the slug) and a `content` field using Markdoc. Content is stored as `.mdoc` files under `src/content/posts/`.
+
+## Storage modes
+
+The CLI scaffolds projects using **local mode** (`storage: { kind: 'local' }`). In local mode, Keystatic reads and writes files directly to your local file system — no GitHub account or internet connection required.
+
+<Note>
+  Local mode is intended for development. When you're ready to let other team members edit content, switch to **GitHub mode** or **Keystatic Cloud**.
+</Note>
+
+To switch modes, update the `storage` option in your `keystatic.config.ts`:
+
+<Tabs>
+  <Tab title="GitHub mode">
+    ```ts
+    storage: {
+      kind: 'github',
+      repo: 'owner/repo',
+    }
+    ```
+
+    See the [GitHub mode guide](/concepts/github-mode) for the full setup, including OAuth app configuration.
+  </Tab>
+  <Tab title="Cloud mode">
+    ```ts
+    storage: {
+      kind: 'cloud',
+    },
+    cloud: {
+      project: 'your-team/your-project',
+    }
+    ```
+
+    See the [Keystatic Cloud page](/cloud) for setup instructions. Cloud mode handles authentication for you.
+  </Tab>
+</Tabs>
+
+## Add Keystatic to an existing project
+
+If you already have a Next.js, Astro, or Remix project, use the framework-specific integration guides instead of the CLI:
+
+- [Next.js integration guide](/installation/next-js)
+- [Astro integration guide](/installation/astro)
+- [Remix integration guide](/installation/remix)

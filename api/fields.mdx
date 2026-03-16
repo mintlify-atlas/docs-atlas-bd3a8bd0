@@ -1,0 +1,370 @@
+---
+title: "fields"
+description: "Quick reference for all fields available in the Keystatic fields namespace."
+---
+
+The `fields` namespace contains all the field constructors available in Keystatic. Import it from `@keystatic/core`:
+
+```ts
+import { fields } from '@keystatic/core';
+```
+
+---
+
+## Quick reference
+
+| Field | Description |
+| --- | --- |
+| `fields.text()` | Single-line or multiline plain text |
+| `fields.slug()` | A text field that generates a URL-safe slug |
+| `fields.url()` | A URL string with validation |
+| `fields.integer()` | An integer number |
+| `fields.number()` | A floating-point number |
+| `fields.date()` | A date (YYYY-MM-DD) |
+| `fields.datetime()` | A date and time |
+| `fields.checkbox()` | A boolean toggle |
+| `fields.select()` | A single-choice select from a fixed list of options |
+| `fields.multiselect()` | A multi-choice select from a fixed list of options |
+| `fields.image()` | An uploaded image file stored as an asset |
+| `fields.file()` | An uploaded binary file stored as an asset |
+| `fields.cloudImage()` | An image managed by Keystatic Cloud |
+| `fields.document()` | A rich-text document (Keystatic native format) |
+| `fields.markdoc()` | A Markdoc or MDX document |
+| `fields.mdx()` | Alias for `fields.markdoc()` with MDX serialization |
+| `fields.object()` | A group of fields as a nested object |
+| `fields.array()` | A repeatable list of a given field or object |
+| `fields.conditional()` | A discriminated union — different fields based on a discriminant value |
+| `fields.relationship()` | A reference to a single entry in another collection |
+| `fields.multiRelationship()` | References to multiple entries in another collection |
+| `fields.pathReference()` | A reference to a file path in the repository |
+| `fields.blocks()` | A polymorphic array of named block types |
+| `fields.child()` | A child field for use inside content components |
+| `fields.empty()` | A field that stores no data |
+| `fields.ignored()` | A field that is not shown in the Admin UI and not written |
+
+---
+
+## Text and string fields
+
+### `fields.text(options)`
+
+```ts
+fields.text({
+  label: string;              // required — shown in the Admin UI
+  description?: string;
+  defaultValue?: string;
+  multiline?: boolean;        // render as a textarea
+  validation?: {
+    length?: { min?: number; max?: number };
+    isRequired?: boolean;
+  };
+})
+```
+
+### `fields.slug(options)`
+
+A text field that stores both a human-readable name and a URL-safe slug. The `slugField` in `collection()` must point to a `fields.slug()` field.
+
+```ts
+fields.slug({
+  name: {
+    label: string;            // label for the name input
+    description?: string;
+    defaultValue?: string;
+    validation?: { isRequired?: boolean };
+  };
+  slug?: {
+    label?: string;
+    description?: string;
+    generate?: (name: string) => string;  // custom slug generator
+  };
+})
+```
+
+### `fields.url(options)`
+
+```ts
+fields.url({
+  label: string;
+  description?: string;
+  defaultValue?: string;
+  validation?: { isRequired?: boolean };
+})
+```
+
+---
+
+## Numeric fields
+
+### `fields.integer(options)`
+
+```ts
+fields.integer({
+  label: string;
+  description?: string;
+  defaultValue?: number;
+  validation?: {
+    isRequired?: boolean;
+    min?: number;
+    max?: number;
+  };
+})
+```
+
+### `fields.number(options)`
+
+```ts
+fields.number({
+  label: string;
+  description?: string;
+  defaultValue?: number;
+  validation?: {
+    isRequired?: boolean;
+    min?: number;
+    max?: number;
+    step?: number;
+  };
+})
+```
+
+---
+
+## Date and time fields
+
+### `fields.date(options)`
+
+Stores a date as `YYYY-MM-DD`.
+
+```ts
+fields.date({
+  label: string;
+  description?: string;
+  defaultValue?: { kind: 'today' } | { value: string };
+  validation?: { isRequired?: boolean };
+})
+```
+
+### `fields.datetime(options)`
+
+```ts
+fields.datetime({
+  label: string;
+  description?: string;
+  defaultValue?: { kind: 'now' } | { value: string };
+  validation?: { isRequired?: boolean };
+})
+```
+
+---
+
+## Boolean field
+
+### `fields.checkbox(options)`
+
+```ts
+fields.checkbox({
+  label: string;
+  description?: string;
+  defaultValue?: boolean;
+})
+```
+
+---
+
+## Selection fields
+
+### `fields.select(options)`
+
+```ts
+fields.select({
+  label: string;
+  description?: string;
+  options: Array<{ label: string; value: string }>;
+  defaultValue: string;       // must match one of the option values
+})
+```
+
+### `fields.multiselect(options)`
+
+```ts
+fields.multiselect({
+  label: string;
+  description?: string;
+  options: Array<{ label: string; value: string }>;
+  defaultValue?: string[];
+})
+```
+
+---
+
+## Asset fields
+
+### `fields.image(options)`
+
+```ts
+fields.image({
+  label: string;
+  description?: string;
+  directory?: string;          // where to store uploaded images
+  publicPath?: string;         // path prefix used in the stored value
+  validation?: { isRequired?: boolean };
+})
+```
+
+### `fields.file(options)`
+
+```ts
+fields.file({
+  label: string;
+  description?: string;
+  directory?: string;
+  publicPath?: string;
+  validation?: { isRequired?: boolean };
+})
+```
+
+### `fields.cloudImage(options)`
+
+An image field that stores images in Keystatic Cloud.
+
+```ts
+fields.cloudImage({
+  label: string;
+  description?: string;
+  validation?: { isRequired?: boolean };
+})
+```
+
+---
+
+## Content / document fields
+
+### `fields.document(options)`
+
+A rich-text document using Keystatic's native block editor.
+
+```ts
+fields.document({
+  label: string;
+  description?: string;
+  formatting?: boolean | { /* fine-grained options */ };
+  links?: boolean;
+  images?: boolean | { directory?: string; publicPath?: string };
+  tables?: boolean;
+  dividers?: boolean;
+  componentBlocks?: Record<string, ComponentBlock>;
+})
+```
+
+### `fields.markdoc(options)` / `fields.mdx(options)`
+
+A document field that serializes to Markdoc (`.mdoc`) or MDX (`.mdx`) format.
+
+```ts
+fields.markdoc({
+  label: string;
+  description?: string;
+  options?: {
+    image?: { directory?: string; publicPath?: string };
+  };
+  components?: Record<string, ComponentBlock>;
+})
+```
+
+---
+
+## Structural fields
+
+### `fields.object(fields, options?)`
+
+```ts
+fields.object(
+  {
+    fieldKey: ComponentSchema,
+    // ...
+  },
+  {
+    label?: string;
+    description?: string;
+    layout?: number[];  // 12-column grid spans per field
+  }
+)
+```
+
+### `fields.array(elementField, options)`
+
+```ts
+fields.array(
+  elementField,  // a ComponentSchema (often fields.object(...))
+  {
+    label: string;
+    description?: string;
+    itemLabel?: (props: unknown) => string;
+    slugField?: string;
+    validation?: { length?: { min?: number; max?: number } };
+  }
+)
+```
+
+### `fields.conditional(discriminant, values)`
+
+```ts
+fields.conditional(
+  fields.select({ /* ... */ }),  // the discriminant field
+  {
+    optionA: fields.object({ /* ... */ }),
+    optionB: fields.object({ /* ... */ }),
+  }
+)
+```
+
+---
+
+## Relationship fields
+
+### `fields.relationship(options)`
+
+```ts
+fields.relationship({
+  label: string;
+  description?: string;
+  collection: string;   // key of the target collection
+  validation?: { isRequired?: boolean };
+})
+```
+
+### `fields.multiRelationship(options)`
+
+```ts
+fields.multiRelationship({
+  label: string;
+  description?: string;
+  collection: string;
+  validation?: { length?: { min?: number; max?: number } };
+})
+```
+
+---
+
+## Utility fields
+
+### `fields.pathReference(options)`
+
+A reference to a file path within the repository.
+
+```ts
+fields.pathReference({
+  label: string;
+  description?: string;
+  pattern?: string;  // glob pattern to restrict selectable paths
+  validation?: { isRequired?: boolean };
+})
+```
+
+### `fields.ignored()`
+
+A field that stores no data and is never shown in the Admin UI. Useful as a placeholder.
+
+```ts
+fields.ignored()
+```

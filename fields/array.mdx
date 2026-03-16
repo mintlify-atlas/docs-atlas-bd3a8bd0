@@ -1,0 +1,118 @@
+---
+title: "Array field"
+description: "Create a repeating list of a single field type, with optional slug and length validation."
+---
+
+The `array` field creates a repeating list of entries based on a single field or [`object`](/fields/object) field. Editors can add, remove, and reorder items.
+
+The first argument is the element field. The second argument (optional) is an options object that provides the label, item label, slug field, and validation.
+
+## Usage
+
+<CodeGroup>
+
+```typescript Simple (list of text values)
+tags: fields.array(
+  fields.text({ label: 'Tag' }),
+  {
+    label: 'Tags',
+    itemLabel: props => props.value,
+  }
+)
+```
+
+```typescript Complex (array of objects)
+teamMembers: fields.array(
+  fields.object({
+    name: fields.text({ label: 'Name' }),
+    role: fields.text({ label: 'Role' }),
+  }),
+  {
+    label: 'Team members',
+    itemLabel: props => props.fields.name.value,
+  }
+)
+```
+
+</CodeGroup>
+
+## Arguments
+
+<ParamField path="element" type="ComponentSchema" required>
+  The field used for each item in the array. Can be any Keystatic field, but is most commonly a `text`, `relationship`, or `object` field.
+</ParamField>
+
+<ParamField path="opts" type="object">
+  Optional configuration for the array field.
+
+  <Expandable title="opts properties">
+    <ParamField path="opts.label" type="string">
+      The label for the array field, shown as a section heading. Defaults to `'Items'`.
+    </ParamField>
+    <ParamField path="opts.description" type="string">
+      Descriptive text shown below the label.
+    </ParamField>
+    <ParamField path="opts.itemLabel" type="(props: GenericPreviewProps) => string">
+      A function that returns the display label for each item. Receives the preview props of the element field. Defaults to `Item 1`, `Item 2`, etc.
+    </ParamField>
+    <ParamField path="opts.slugField" type="string">
+      When the element is an `object` field, set this to the key of a `slug` field inside that object. This replaces numeric indexes in file paths (e.g. for nested markdoc or image fields). Uniqueness is validated in the same way as collection slugs.
+    </ParamField>
+    <ParamField path="opts.validation.length.min" type="number">
+      Minimum number of items required.
+    </ParamField>
+    <ParamField path="opts.validation.length.max" type="number">
+      Maximum number of items allowed.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Return type
+
+Returns a `readonly` array of the element field's read value type.
+
+## Slug field
+
+The `slugField` option replaces numeric path segments with a meaningful slug, improving the readability of file paths for assets stored inside array items:
+
+```typescript
+authors: fields.array(
+  fields.object({
+    name: fields.text({ label: 'Name' }),
+    bio: fields.markdoc({ label: 'Bio' }),
+  }),
+  {
+    label: 'Authors',
+    slugField: 'name',
+    itemLabel: props => props.fields.name.value,
+  }
+)
+```
+
+With `slugField: 'name'`, the bio for an author named `Jane Smith` is stored at `authors/jane-smith/bio.mdoc` instead of `authors/0/bio.mdoc`.
+
+## Example
+
+```typescript
+import { collection, fields } from '@keystatic/core'
+
+posts: collection({
+  label: 'Posts',
+  slugField: 'title',
+  schema: {
+    title: fields.slug({ name: { label: 'Title' } }),
+    relatedPosts: fields.array(
+      fields.relationship({
+        label: 'Post',
+        collection: 'posts',
+        validation: { isRequired: true },
+      }),
+      {
+        label: 'Related posts',
+        itemLabel: props => props.value ?? 'Select a post',
+        validation: { length: { max: 3 } },
+      }
+    ),
+  },
+})
+```

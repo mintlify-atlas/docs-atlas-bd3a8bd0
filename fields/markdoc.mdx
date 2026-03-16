@@ -1,0 +1,106 @@
+---
+title: "Markdoc field"
+description: "A WYSIWYG rich-text editor that reads and writes Markdoc (.mdoc) files."
+---
+
+The `markdoc` field provides a WYSIWYG editor that stores content as [Markdoc](https://markdoc.dev) (`.mdoc` files by default). It is an evolution of the `document` field with extended capabilities including [content components](/fields/content-components).
+
+Keystatic handles reading and writing the Markdoc files via the Reader API; you are responsible for rendering the output.
+
+## Usage
+
+```typescript
+import { fields } from '@keystatic/core'
+
+content: fields.markdoc({
+  label: 'Content',
+})
+```
+
+## Options
+
+<ParamField path="label" type="string" required>
+  The label displayed in the Admin UI for this field.
+</ParamField>
+
+<ParamField path="description" type="string">
+  Descriptive text shown below the label in the Admin UI.
+</ParamField>
+
+<ParamField path="extension" type="'mdoc' | 'md'">
+  The file extension used for the content file. Use `'md'` if you need plain Markdown compatibility. Defaults to `'mdoc'`.
+</ParamField>
+
+<ParamField path="options" type="MarkdocEditorOptions">
+  Editor formatting options. Controls which formatting features (headings, bold, lists, tables, etc.) are available in the toolbar. See the [MarkdocEditorOptions type signature](https://docsmill.dev/npm/@keystatic/core@latest#/.fields.markdoc.MarkdocEditorOptions) for the full list.
+</ParamField>
+
+<ParamField path="components" type="Record<string, ContentComponent>">
+  Custom content components that editors can insert into the rich-text content. See [Content components](/fields/content-components).
+</ParamField>
+
+## Inline variant
+
+By default, `fields.markdoc` stores content in a separate file. Use `fields.markdoc.inline(...)` to store content inline in the same YAML/JSON file:
+
+```typescript
+summary: fields.markdoc.inline({
+  label: 'Summary',
+})
+```
+
+This stores the content as a YAML block scalar:
+
+```yaml
+summary: |
+  # Summary heading
+
+  Some content here.
+```
+
+## Image options
+
+Images embedded in the editor are stored similarly to the [`image`](/fields/image) field. Configure `options.image.directory` and `options.image.publicPath` to control where images are saved and how the path is constructed. See the [MarkdocEditorOptions type signature](https://docsmill.dev/npm/@keystatic/core@latest#/.fields.markdoc.MarkdocEditorOptions) for details.
+
+## Return type
+
+When reading via the Reader API, the field returns a function `() => Promise<{ node: MarkdocNode }>`. Call it to get the parsed Markdoc AST, then use a Markdoc renderer to convert it to HTML or React.
+
+## Example
+
+```typescript
+import { collection, fields } from '@keystatic/core'
+import { wrapper, block } from '@keystatic/core/content-components'
+
+posts: collection({
+  label: 'Posts',
+  slugField: 'title',
+  format: { contentField: 'content' },
+  schema: {
+    title: fields.slug({ name: { label: 'Title' } }),
+    content: fields.markdoc({
+      label: 'Content',
+      extension: 'mdoc',
+      components: {
+        Callout: wrapper({
+          label: 'Callout',
+          schema: {
+            type: fields.select({
+              label: 'Type',
+              options: [
+                { label: 'Info', value: 'info' },
+                { label: 'Warning', value: 'warning' },
+              ],
+              defaultValue: 'info',
+            }),
+          },
+        }),
+      },
+    }),
+  },
+})
+```
+
+<Note>
+  Keystatic does not render Markdoc for you. Use the `@markdoc/markdoc` package or another community tool to transform the `MarkdocNode` AST into HTML or React components.
+</Note>

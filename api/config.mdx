@@ -1,0 +1,141 @@
+---
+title: "config()"
+description: "API reference for the config() function that defines your Keystatic configuration."
+---
+
+The `config()` function defines your Keystatic project: which storage backend to use, what collections and singletons exist, and how the Admin UI should look.
+
+## Import
+
+```ts
+import { config } from '@keystatic/core';
+```
+
+## Usage
+
+```ts
+// keystatic.config.ts
+import { config, collection, singleton, fields } from '@keystatic/core';
+
+export default config({
+  storage: { kind: 'local' },
+  collections: {
+    posts: collection({ /* ... */ }),
+  },
+  singletons: {
+    settings: singleton({ /* ... */ }),
+  },
+});
+```
+
+## Parameters
+
+<ParamField path="storage" type="LocalStorageConfig | GitHubStorageConfig | CloudStorageConfig" required>
+  Defines where Keystatic reads and writes content.
+
+  <Expandable title="Local storage">
+    ```ts
+    storage: { kind: 'local' }
+    ```
+    Content is read from and written to the local filesystem. Suitable for development and for projects that don't need a remote repository.
+  </Expandable>
+
+  <Expandable title="GitHub storage">
+    ```ts
+    storage: {
+      kind: 'github',
+      repo: 'owner/repo',         // required
+      pathPrefix?: string,         // optional subdirectory within the repo
+      branchPrefix?: string,       // optional prefix for created branches
+    }
+    ```
+    Content is committed directly to a GitHub repository. Requires a GitHub App to be configured.
+  </Expandable>
+
+  <Expandable title="Cloud storage">
+    ```ts
+    storage: {
+      kind: 'cloud',
+      pathPrefix?: string,         // optional subdirectory within the repo
+      branchPrefix?: string,       // optional prefix for created branches
+    }
+    ```
+    Uses Keystatic Cloud for authentication and collaboration. Requires `cloud.project` to also be set.
+  </Expandable>
+</ParamField>
+
+<ParamField path="collections" type="Record<string, Collection>">
+  A map of collection keys to `collection()` definitions. Each key becomes the collection's identifier used in the Reader API and the Admin UI URL.
+
+  ```ts
+  collections: {
+    posts: collection({ label: 'Posts', slugField: 'title', schema: { /* ... */ } }),
+    authors: collection({ label: 'Authors', slugField: 'name', schema: { /* ... */ } }),
+  }
+  ```
+</ParamField>
+
+<ParamField path="singletons" type="Record<string, Singleton>">
+  A map of singleton keys to `singleton()` definitions.
+
+  ```ts
+  singletons: {
+    settings: singleton({ label: 'Settings', schema: { /* ... */ } }),
+  }
+  ```
+</ParamField>
+
+<ParamField path="cloud" type="{ project: string }">
+  Required when using `storage: { kind: 'cloud' }`. The `project` value is the slug of your Keystatic Cloud project.
+
+  ```ts
+  cloud: { project: 'my-org/my-project' }
+  ```
+</ParamField>
+
+<ParamField path="ui" type="UserInterface">
+  Controls the appearance of the Keystatic Admin UI.
+
+  <Expandable title="ui options">
+    <ParamField path="ui.brand" type="{ name: string; mark?: (props: { colorScheme: 'light' | 'dark' }) => ReactElement }">
+      Customize the brand name and logo shown in the Admin UI sidebar.
+
+      ```ts
+      ui: {
+        brand: {
+          name: 'My CMS',
+        },
+      }
+      ```
+    </ParamField>
+
+    <ParamField path="ui.navigation" type="string[] | Record<string, string[]>">
+      Control the order and grouping of items in the Admin UI sidebar. Items are collection/singleton keys. Use `'---'` as a divider.
+
+      ```ts
+      // Flat list
+      ui: { navigation: ['posts', '---', 'settings'] }
+
+      // Grouped
+      ui: {
+        navigation: {
+          Content: ['posts', 'authors'],
+          Settings: ['settings'],
+        },
+      }
+      ```
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="locale" type="string">
+  The locale used for the Admin UI interface. Defaults to the browser locale.
+</ParamField>
+
+## Return value
+
+`config()` is an identity function — it returns the config object unchanged. Its purpose is to provide TypeScript type-checking and inference for your configuration.
+
+<ResponseField name="config" type="Config<Collections, Singletons>">
+  The typed config object to export as the default export of `keystatic.config.ts`.
+</ResponseField>

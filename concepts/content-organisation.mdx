@@ -1,0 +1,174 @@
+---
+title: "Content organisation"
+description: "Control and flexibility over where Keystatic stores your content, using collections, singletons, and the path system."
+---
+
+Keystatic organises content around two structures: `collections` and `singletons`. Both are defined in the [Keystatic configuration](/concepts/configuration).
+
+<CardGroup cols={2}>
+  <Card title="Collections" icon="layer-group" href="/concepts/collections">
+    Multiple entries of the same structure — blog posts, recipes, testimonials.
+  </Card>
+  <Card title="Singletons" icon="file" href="/concepts/singletons">
+    A single entry — site settings, a homepage, a contact page.
+  </Card>
+</CardGroup>
+
+You get precise control over _where_ content is stored, both at the collection/singleton level and at the individual field level.
+
+---
+
+## Path configuration
+
+Use the `path` property on a collection or singleton to control where Keystatic stores the files:
+
+```typescript
+// keystatic.config.ts
+export default config({
+  collections: {
+    posts: collection({
+      label: 'Posts',
+      path: 'content/posts/*/',
+      // ...
+    }),
+  },
+  singletons: {
+    settings: singleton({
+      label: 'Settings',
+      path: 'content/settings/',
+      // ...
+    }),
+  },
+})
+```
+
+<Note>
+  Collections require a `*` wildcard in the path. This is replaced by the slug of each entry. See the [Path wildcard](/concepts/path-wildcard) page for advanced patterns.
+</Note>
+
+The presence or absence of a **trailing slash** on the path changes how files are structured on disk.
+
+---
+
+## Collections
+
+The default `path` for a collection, if not specified, is `{collection-name}/*/`.
+
+<AccordionGroup>
+  <Accordion title="Path ending with a trailing slash /">
+    Each entry is created in its own directory named after the slug.
+
+    ```
+    collection-name
+    └── slug
+        ├── index.yaml
+        └── other.mdoc
+    ```
+
+    For a `posts` collection with `path: 'content/posts/*/'`, two entries produce:
+
+    ```
+    content
+    └── posts
+        ├── my-first-post
+        │   ├── index.yaml
+        │   └── other.mdoc
+        └── my-second-post
+            ├── index.yaml
+            └── other.mdoc
+    ```
+  </Accordion>
+
+  <Accordion title="Path ending without a trailing slash">
+    Entry index files are created directly inside the collection directory.
+
+    ```
+    collection-name
+    ├── slug.yaml
+    └── slug
+        └── other.mdoc
+    ```
+
+    For a `posts` collection with `path: 'content/posts/*'`, two entries produce:
+
+    ```
+    content
+    └── posts
+        ├── my-first-post.yaml
+        ├── my-first-post
+        │   └── other.mdoc
+        ├── my-second-post.yaml
+        └── my-second-post
+            └── other.mdoc
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Singletons
+
+Singleton paths do not contain a `*` wildcard. The default `path`, if not specified, is `{singleton-name}/`.
+
+<AccordionGroup>
+  <Accordion title="Path ending with a trailing slash /">
+    The singleton's content is stored inside a directory named after the singleton:
+
+    ```
+    singleton-name
+    ├── index.yaml
+    └── other.mdoc
+    ```
+  </Accordion>
+
+  <Accordion title="Path ending without a trailing slash">
+    The content is stored in a file named after the singleton. Additional document fields are stored in a directory with the same name:
+
+    ```
+    singleton-name.yaml
+    singleton-name
+    └── other.mdoc
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Images output path
+
+You can store images independently of the collection or singleton `path`. This is useful when your framework requires images in a specific directory such as `public/` or `assets/`.
+
+```typescript
+// In the context of a `posts` collection...
+coverImage: fields.image({
+  label: 'Cover Image',
+  directory: 'public/images/posts',
+}),
+```
+
+Regardless of where `posts` entries are created, the `coverImage` file is written to `public/images/posts/{post-slug}`.
+
+---
+
+## Path prefix (monorepos)
+
+In a monorepo, use `storage.pathPrefix` to scope Keystatic to a subdirectory instead of adding a prefix to every `path` option:
+
+```typescript
+export default config({
+  storage: {
+    kind: 'github',
+    repo: 'my-org/my-repo',
+    pathPrefix: 'somewhere/my-site',
+  },
+  collections: {
+    posts: collection({
+      label: 'Posts',
+      path: 'content/posts/*/',
+      // ...
+    }),
+  },
+})
+```
+
+This config looks for posts in `somewhere/my-site/content/posts`.

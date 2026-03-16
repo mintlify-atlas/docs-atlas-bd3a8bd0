@@ -1,0 +1,71 @@
+---
+title: "URL field"
+description: "Store a sanitised URL string using @braintree/sanitize-url."
+---
+
+The `url` field stores a sanitised URL string. It uses [`@braintree/sanitize-url`](https://github.com/braintree/sanitize-url) under the hood to prevent storing dangerous values.
+
+## Usage
+
+```typescript
+import { fields } from '@keystatic/core'
+
+website: fields.url({
+  label: 'Website URL',
+  description: 'The public website for this author.',
+})
+```
+
+## Options
+
+<ParamField path="label" type="string" required>
+  The label displayed in the Admin UI for this field.
+</ParamField>
+
+<ParamField path="description" type="string">
+  Descriptive text shown below the label in the Admin UI.
+</ParamField>
+
+<ParamField path="defaultValue" type="string">
+  The default value for the field. Defaults to `null`.
+</ParamField>
+
+<ParamField path="validation" type="object">
+  Validation options for the field.
+
+  <Expandable title="validation properties">
+    <ParamField path="validation.isRequired" type="boolean">
+      When `true`, the field must have a value.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Return type
+
+Returns `string | null`. Returns `null` when empty. If `validation.isRequired` is `true`, returns `string`.
+
+## Example
+
+```typescript
+import { collection, fields } from '@keystatic/core'
+
+authors: collection({
+  label: 'Authors',
+  slugField: 'name',
+  schema: {
+    name: fields.slug({ name: { label: 'Name' } }),
+    website: fields.url({
+      label: 'Website',
+      description: 'Must be a valid URL including the protocol (https://).',
+      validation: { isRequired: false },
+    }),
+    twitter: fields.url({
+      label: 'Twitter / X profile URL',
+    }),
+  },
+})
+```
+
+<Warning>
+  The URL field sanitises values to prevent XSS. Dangerous URL schemes such as `javascript:` are removed. Always validate URLs on your server if you render them as `href` values.
+</Warning>
