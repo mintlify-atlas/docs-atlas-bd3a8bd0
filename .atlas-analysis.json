@@ -1,0 +1,165 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "Keystatic",
+  "projectDescription": "A first-class CMS experience with TypeScript API, storing content in Markdown, YAML, or JSON files — no database required — with built-in GitHub integration for Next.js, Remix, and Astro.",
+  "theme": "palm",
+  "primaryColor": "#8c8b86",
+  "lightColor": "#282826",
+  "darkColor": "#60615e",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "quick-start",
+              "cloud"
+            ]
+          },
+          {
+            "group": "Integration Guides",
+            "pages": [
+              "installation/next-js",
+              "installation/astro",
+              "installation/remix"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/content-organisation",
+              "concepts/collections",
+              "concepts/singletons",
+              "concepts/configuration",
+              "concepts/local-mode",
+              "concepts/github-mode",
+              "concepts/format-options",
+              "concepts/entry-layout",
+              "concepts/path-wildcard",
+              "concepts/user-interface"
+            ]
+          },
+          {
+            "group": "Content & Fields",
+            "pages": [
+              "fields/overview",
+              "fields/text",
+              "fields/integer",
+              "fields/number",
+              "fields/checkbox",
+              "fields/select",
+              "fields/multiselect",
+              "fields/date",
+              "fields/datetime",
+              "fields/url",
+              "fields/image",
+              "fields/file",
+              "fields/slug",
+              "fields/object",
+              "fields/array",
+              "fields/conditional",
+              "fields/blocks",
+              "fields/relationship",
+              "fields/path-reference",
+              "fields/markdoc",
+              "fields/mdx",
+              "fields/content-components"
+            ]
+          },
+          {
+            "group": "Reading Content",
+            "pages": [
+              "reader/overview",
+              "reader/reader-api",
+              "reader/github-reader"
+            ]
+          },
+          {
+            "group": "Recipes",
+            "pages": [
+              "recipes/astro-images",
+              "recipes/real-time-previews",
+              "recipes/astro-disable-admin-ui-in-production",
+              "recipes/nextjs-disable-admin-ui-in-production"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Core API",
+            "pages": [
+              "api/config",
+              "api/collection",
+              "api/singleton",
+              "api/fields"
+            ]
+          },
+          {
+            "group": "Reader API",
+            "pages": [
+              "api/create-reader",
+              "api/create-github-reader"
+            ]
+          },
+          {
+            "group": "Framework Adapters",
+            "pages": [
+              "api/next-js-api-route",
+              "api/astro-api-route"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "TypeScript-first configuration API for defining content schemas",
+    "No database — content stored as Markdown, YAML, or JSON files",
+    "Built-in GitHub integration for collaborative content editing",
+    "Works locally or with Keystatic Cloud for simplified auth",
+    "First-class support for Next.js, Astro, and Remix",
+    "Rich field types: text, image, markdoc, MDX, conditional, relationship, and more",
+    "WYSIWYG editor with Markdoc and MDX support",
+    "Reader API for type-safe content querying at build time",
+    "Content components for embedding React components in rich-text fields",
+    "Multiplayer editing (experimental) via Keystatic Cloud Pro"
+  ],
+  "publicApiSurface": [
+    "config() — define the Keystatic configuration",
+    "collection() — define a collection of content entries",
+    "singleton() — define a single content entry",
+    "fields.text()",
+    "fields.integer()",
+    "fields.number()",
+    "fields.checkbox()",
+    "fields.select()",
+    "fields.multiselect()",
+    "fields.date()",
+    "fields.datetime()",
+    "fields.url()",
+    "fields.image()",
+    "fields.file()",
+    "fields.slug()",
+    "fields.object()",
+    "fields.array()",
+    "fields.conditional()",
+    "fields.blocks()",
+    "fields.relationship()",
+    "fields.pathReference()",
+    "fields.markdoc()",
+    "fields.mdx()",
+    "fields.cloudImage()",
+    "fields.emptyContent()",
+    "createReader() — read content from the local file system",
+    "createGitHubReader() — read content from GitHub",
+    "@keystatic/next — Next.js API route handler",
+    "@keystatic/astro — Astro integration",
+    "@keystatic/remix — Remix adapter"
+  ]
+}
